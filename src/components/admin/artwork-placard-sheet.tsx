@@ -189,7 +189,7 @@ type ConfigurableFieldKey =
 
 const FIELD_METADATA: Array<{ key: ConfigurableFieldKey; label: string }> = [
   { key: "title", label: "Artwork Title" },
-  { key: "medium", label: "Medium & Materials" },
+  { key: "medium", label: "Materials & Surface" },
   { key: "dimensions", label: "Dimensions" },
   { key: "year", label: "Year Created" },
   { key: "price", label: "Valuation / Price" },
@@ -1597,7 +1597,7 @@ export function ArtworkPlacardSheet({
                         const labelMap: Record<string, string> = {
                           header: "Header (School & Artist)",
                           title: "Artwork Title",
-                          medium: "Medium & Materials",
+                          medium: "Materials & Surface",
                           dimensions: "Dimensions",
                           year: "Year Created",
                           price: "Valuation / Price",
@@ -1810,10 +1810,10 @@ export function ArtworkPlacardSheet({
                             />
                           </div>
 
-                          {/* Medium & Materials */}
+                          {/* Materials & Surface */}
                           <div className="space-y-1">
                             <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                              Medium &amp; Materials
+                              Materials &amp; Surface
                             </Label>
                             <Input
                               type="text"

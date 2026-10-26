@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { TiptapRenderer } from "@/components/public/tiptap-renderer";
 import { MediaGalleryBlock, MediaGalleryItem } from "@/components/public/blocks/media-gallery-block";
 import { PdfViewerBlock } from "@/components/public/blocks/pdf-viewer-block";
-import { SocialShareBar } from "@/components/public/social-share-bar";
 import {
   Calendar,
   MapPin,
@@ -391,17 +390,6 @@ export default async function EventDetailPage({ params }: PageProps) {
             </div>
           </section>
         )}
-
-        {/* Universal Event Share Bar */}
-        <div className="pt-4">
-          <SocialShareBar
-            title={`${event.title} (${event.eventType})`}
-            description={`${scheduleFormatted} • ${event.venueName || event.venue}, ${event.city}`}
-            url={`/events/${event.slug}`}
-            mediaUrl={banner || undefined}
-            entityLabel="Event"
-          />
-        </div>
       </main>
 
       <Footer />

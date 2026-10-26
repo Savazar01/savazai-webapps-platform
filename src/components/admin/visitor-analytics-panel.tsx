@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Activity,
   Globe,
@@ -16,6 +17,7 @@ import {
   MapPin,
   ArrowUpRight,
   Compass,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +98,11 @@ function formatDuration(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
-export function VisitorAnalyticsPanel() {
+interface VisitorAnalyticsPanelProps {
+  mode?: "full" | "summary";
+}
+
+export function VisitorAnalyticsPanel({ mode = "full" }: VisitorAnalyticsPanelProps) {
   const [data, setData] = React.useState<AnalyticsData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [days, setDays] = React.useState<number>(30);
@@ -174,6 +180,116 @@ export function VisitorAnalyticsPanel() {
     if (deviceType === "Tablet") return <Tablet className="w-3.5 h-3.5" />;
     return <Monitor className="w-3.5 h-3.5" />;
   };
+
+  if (mode === "summary") {
+    return (
+      <Card className="border-border shadow-sm overflow-hidden">
+        <CardHeader className="pb-4 border-b border-border/60 bg-muted/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                >
+                  Visitor Telemetry Snapshot
+                </Badge>
+              </div>
+              <CardTitle className="font-serif text-base flex items-center gap-2 mt-1">
+                <Activity className="w-4 h-4 text-primary" />
+                Visitor Traffic &amp; Engagement Summary
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Live 30-day visitor metrics. Open the dedicated Visitor Telemetry hub in System Settings for geographic heatmaps, route dwell, session logs, and Excel (.xlsx) exports.
+              </CardDescription>
+            </div>
+            <Link href="/admin/settings?tab=telemetry">
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="h-8 text-xs gap-1.5 cursor-pointer shrink-0"
+              >
+                View Detailed Visitor Telemetry
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl border border-border/80 bg-card flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-mono uppercase text-muted-foreground">
+                  Unique Visitors
+                </p>
+                <p className="text-2xl font-serif font-bold text-foreground mt-0.5">
+                  {summary.totalSessions}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Last 30 days window
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Users className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/80 bg-card flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-mono uppercase text-muted-foreground">
+                  Total Page Views
+                </p>
+                <p className="text-2xl font-serif font-bold text-foreground mt-0.5">
+                  {summary.totalPageViews}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Public routes &amp; exhibitions
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Eye className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/80 bg-card flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-mono uppercase text-muted-foreground">
+                  Active Last 24 Hours
+                </p>
+                <p className="text-2xl font-serif font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {summary.activeLast24h}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Recent active sessions
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <Activity className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/80 bg-card flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-mono uppercase text-muted-foreground">
+                  Avg. Session Dwell
+                </p>
+                <p className="text-2xl font-serif font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                  {formatDuration(summary.avgDwellSeconds)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Engaged viewing duration
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-border shadow-sm overflow-hidden">

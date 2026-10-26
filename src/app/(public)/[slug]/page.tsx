@@ -5,7 +5,6 @@ import prisma from "@/lib/prisma";
 import { Navbar } from "@/components/public/navbar";
 import { Footer } from "@/components/public/footer";
 import { DynamicPageSections } from "@/components/public/dynamic-page-sections";
-import { SocialShareBar } from "@/components/public/social-share-bar";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -56,19 +55,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DynamicPublicPage({ params }: PageProps) {
   const { slug } = await params;
-  const [page, settings] = await Promise.all([
-    getPageBySlug(slug),
-    prisma.systemSetting.findFirst().catch(() => null),
-  ]);
+  const page = await getPageBySlug(slug);
 
   // If page does not exist, unpublished, inactive, or soft-deleted, trigger 404
   if (!page || !page.isPublished || !page.isActive || page.isDeleted) {
     notFound();
   }
-
-  const shouldShowPageShare =
-    page.allowShare === true ||
-    (page.allowShare !== false && settings?.enableSocialShare !== false);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
@@ -77,21 +69,7 @@ export default async function DynamicPublicPage({ params }: PageProps) {
 
       {/* Main Dynamic 12-Column Layout Engine */}
       <main className="flex-1">
-        <DynamicPageSections
-          sections={page.sections}
-          allowShare={shouldShowPageShare}
-        />
-        {shouldShowPageShare && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <SocialShareBar
-              title={page.title}
-              description={page.metaDescription || undefined}
-              url={`/${page.slug}`}
-              entityLabel="Page"
-              enabled={true}
-            />
-          </div>
-        )}
+        <DynamicPageSections sections={page.sections} />
       </main>
 
       {/* Dynamic Footer */}

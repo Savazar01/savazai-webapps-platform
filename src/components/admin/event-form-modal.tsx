@@ -425,13 +425,14 @@ function EventFormContent({
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    const fileArray = Array.from(files);
 
-    setUploadingGallery(true);
     const newItems: GalleryImageItem[] = [];
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = await optimizeImageForWebpUpload(files[i]);
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = await optimizeImageForWebpUpload(fileArray[i]);
+        setUploadingGallery(true);
         const body = new FormData();
         body.append("file", file);
         body.append("watermark", "false");

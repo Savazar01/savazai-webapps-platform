@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 /**
  * Client-Side WebP Image Optimization Pipeline
  * Intercepts large non-artwork image uploads (> 1 MB or > 2000px dimension),
@@ -88,16 +90,22 @@ function promptWebpDecisionModal(params: {
         : 0;
 
     const overlay = document.createElement("div");
+    overlay.setAttribute("data-webp-optimizer-modal", "true");
     overlay.style.cssText =
-      "position:fixed;inset:0;z-index:99999;background:rgba(10,10,12,0.78);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,sans-serif;";
+      "position:fixed;inset:0;z-index:2147483647 !important;pointer-events:auto !important;background:rgba(10,10,12,0.82);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,sans-serif;";
 
     const card = document.createElement("div");
     card.style.cssText =
-      "width:100%;max-width:520px;background:#141418;color:#f8fafc;border:1px solid rgba(212,175,55,0.35);border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,0.65);overflow:hidden;";
+      "width:100%;max-width:520px;pointer-events:auto !important;background:#141418;color:#f8fafc;border:1px solid rgba(212,175,55,0.35);border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,0.65);overflow:hidden;";
 
     const origExt = (params.originalFile.name.split(".").pop() || "IMG").toUpperCase();
 
     card.innerHTML = `
+      <style>
+        @keyframes savazai-webp-spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
       <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(212,175,55,0.06);">
         <div>
           <span style="font-size:10px;font-family:monospace;text-transform:uppercase;letter-spacing:0.12em;color:#f59e0b;display:block;font-weight:700;">
@@ -111,7 +119,7 @@ function promptWebpDecisionModal(params: {
           -${savingsPct}% Size
         </span>
       </div>
-      <div style="padding:20px 22px;space-y:16px;">
+      <div style="padding:20px 22px;">
         <p style="margin:0 0 14px 0;font-size:12px;line-height:1.5;color:#94a3b8;">
           This upload exceeds the 1 MB / 2000px threshold. Converting to WebP accelerates page load performance and saves storage bandwidth while preserving visual sharpness.
         </p>
@@ -133,32 +141,86 @@ function promptWebpDecisionModal(params: {
         </div>
 
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:6px;">
-          <button type="button" data-action="keep-original" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:transparent;color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;">
+          <button type="button" data-action="keep-original" style="pointer-events:auto !important;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:transparent;color:#cbd5e1;font-size:12px;font-weight:600;cursor:pointer;">
             Keep Original (${formatBytes(params.originalFile.size)})
           </button>
-          <button type="button" data-action="convert-webp" style="padding:8px 16px;border-radius:8px;border:1px solid #d97706;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,0.3);">
+          <button type="button" data-action="convert-webp" style="pointer-events:auto !important;padding:8px 16px;border-radius:8px;border:1px solid #d97706;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:6px;">
             Convert &amp; Upload WebP (${formatBytes(params.webpFile.size)})
           </button>
         </div>
       </div>
     `;
 
+    // Prevent Radix UI Dialog DismissableLayer / FocusScope from intercepting events outside DialogContent
+    const stopRadixCapture = (e: Event) => {
+      e.stopPropagation();
+    };
+    ["pointerdown", "mousedown", "mouseup", "click", "touchstart", "touchend", "focusin"].forEach(
+      (evtName) => {
+        overlay.addEventListener(evtName, stopRadixCapture, false);
+      }
+    );
+
     overlay.appendChild(card);
     document.body.appendChild(overlay);
 
+    let resolved = false;
     const cleanup = (chosen: File) => {
-      URL.revokeObjectURL(params.webpPreviewUrl);
-      if (overlay.parentNode) {
-        overlay.parentNode.removeChild(overlay);
+      if (resolved) return;
+      resolved = true;
+      window.removeEventListener("keydown", handleEscKey, true);
+      try {
+        URL.revokeObjectURL(params.webpPreviewUrl);
+      } catch {}
+      try {
+        overlay.remove();
+      } catch {
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
       }
       resolve(chosen);
     };
 
-    const keepBtn = card.querySelector('[data-action="keep-original"]');
-    const convertBtn = card.querySelector('[data-action="convert-webp"]');
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        cleanup(params.originalFile);
+      }
+    };
+    window.addEventListener("keydown", handleEscKey, true);
 
-    keepBtn?.addEventListener("click", () => cleanup(params.originalFile));
-    convertBtn?.addEventListener("click", () => cleanup(params.webpFile));
+    const keepBtn = card.querySelector('[data-action="keep-original"]') as HTMLButtonElement | null;
+    const convertBtn = card.querySelector('[data-action="convert-webp"]') as HTMLButtonElement | null;
+
+    if (keepBtn) {
+      keepBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        cleanup(params.originalFile);
+      };
+    }
+
+    if (convertBtn) {
+      convertBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (keepBtn) keepBtn.disabled = true;
+        convertBtn.disabled = true;
+        convertBtn.style.opacity = "0.9";
+        convertBtn.innerHTML = `
+          <span style="display:inline-block;width:12px;height:12px;border:2px solid #09090b;border-top-color:transparent;border-radius:50%;animation:savazai-webp-spin 0.6s linear infinite;"></span>
+          <span>Converting &amp; Uploading...</span>
+        `;
+        toast.success(
+          `Image optimized to WebP (${formatBytes(params.webpFile.size)}, -${savingsPct}%) and uploading!`
+        );
+        window.setTimeout(() => {
+          cleanup(params.webpFile);
+        }, 120);
+      };
+    }
   });
 }
 

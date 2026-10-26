@@ -265,8 +265,8 @@ export async function Footer() {
           </div>
         </div>
 
-        {/* Universal Footer Social Share Bar */}
-        {settings?.enableSocialShare !== false && settings?.showFooterShare !== false && (
+        {/* Universal Footer Social Share Bar (Controlled exclusively by Footer Settings) */}
+        {settings?.showFooterShare !== false && (
           <div className="mb-8">
             <SocialShareBar
               title={siteName}

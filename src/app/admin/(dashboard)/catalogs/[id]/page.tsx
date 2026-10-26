@@ -166,6 +166,8 @@ interface ArtworkOption {
   title: string;
   slug: string;
   primaryImageUrl: string;
+  materials?: string | null;
+  surface?: string | null;
   medium: string | null;
   dimensions: string | null;
   yearCreated: number | null;
@@ -445,6 +447,8 @@ export default function AdminCatalogStudioPage() {
         id: plate.artwork.id,
         title: plate.customTitle || plate.artwork.title,
         slug: plate.artwork.slug,
+        materials: plate.artwork.materials || undefined,
+        surface: plate.artwork.surface || undefined,
         medium: plate.artwork.medium || undefined,
         dimensions: plate.artwork.dimensions || undefined,
         yearCreated: plate.artwork.yearCreated || undefined,

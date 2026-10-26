@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Sparkles, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProtectedImage } from "@/components/public/protected-image";
-import { SocialShareBar } from "@/components/public/social-share-bar";
 import dynamic from "next/dynamic";
 
 const KenBurnsCanvas = dynamic(
@@ -303,14 +302,6 @@ export function ArtworkPlacard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <SocialShareBar
-            title={item.title || "Curated Masterwork"}
-            description={schoolMedium || item.description || item.caption}
-            url={href || undefined}
-            mediaUrl={item.url}
-            entityLabel="Gallery Plate"
-            variant="minimal"
-          />
           {href && (
             <Link
               href={href}

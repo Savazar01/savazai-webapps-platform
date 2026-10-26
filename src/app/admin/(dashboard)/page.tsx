@@ -235,8 +235,8 @@ export default async function AdminDashboardPage() {
       {/* Dynamic Customizable Layout Manager */}
       <DashboardLayoutManager initialWidgets={initialWidgets} />
 
-      {/* Visitor Telemetry, Analytics Dashboard & Excel Export */}
-      <VisitorAnalyticsPanel />
+      {/* Compact Visitor Telemetry Summary Tiles -> Links to /admin/settings?tab=telemetry */}
+      <VisitorAnalyticsPanel mode="summary" />
     </div>
   );
 }

@@ -8,7 +8,6 @@ import { Footer } from "@/components/public/footer";
 import { ArtCanvasViewer } from "@/components/public/art-canvas-viewer";
 import { ExhibitionQrModal } from "@/components/public/exhibition-qr-modal";
 import { TiptapRenderer } from "@/components/public/tiptap-renderer";
-import { SocialShareBar } from "@/components/public/social-share-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/formatters";
@@ -227,14 +226,14 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             {/* Specifications Matrix */}
             <div className="p-4 rounded-xl border border-border bg-card/50 space-y-2.5 text-xs">
               <div className="flex justify-between py-1 border-b border-border/40">
-                <span className="text-muted-foreground font-medium">Materials Used</span>
+                <span className="text-muted-foreground font-medium">Materials</span>
                 <span className="font-serif text-right text-foreground max-w-[220px]">
                   {artwork.materials || artwork.medium}
                 </span>
               </div>
               {artwork.surface && artwork.surface.trim() !== "" && (
                 <div className="flex justify-between py-1 border-b border-border/40">
-                  <span className="text-muted-foreground font-medium">Surface / Support</span>
+                  <span className="text-muted-foreground font-medium">Surface</span>
                   <span className="font-serif text-right text-foreground max-w-[220px]">
                     {artwork.surface}
                   </span>
@@ -348,17 +347,6 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
                   Inquire for Acquisition
                 </Button>
               </Link>
-
-              {settings?.enableSocialShare !== false && (
-                <SocialShareBar
-                  title={artwork.title}
-                  description={`${artwork.category.name} (${artwork.yearCreated}) • ${artwork.materials || artwork.medium}${artwork.surface ? ` on ${artwork.surface}` : ""}`}
-                  url={`/artwork/${artwork.slug}`}
-                  mediaUrl={artwork.watermarkedWebpUrl}
-                  entityLabel="Masterwork"
-                  enabled={true}
-                />
-              )}
             </div>
           </div>
         </div>

@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 import { Navbar } from "@/components/public/navbar";
 import { Footer } from "@/components/public/footer";
 import { DynamicPageSections } from "@/components/public/dynamic-page-sections";
-import { SocialShareBar } from "@/components/public/social-share-bar";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Palette, Music, BookOpen, ArrowRight } from "lucide-react";
 
@@ -80,26 +79,12 @@ export default async function HomePage() {
 
   // 1. If an admin-published dynamic page exists, render via visual builder engine
   if (homePage && homePage.sections.length > 0) {
-    const shouldShowShare = homePage.allowShare !== false;
     return (
       <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
         <Navbar />
 
         <main className="flex-1">
-          <DynamicPageSections
-            sections={homePage.sections}
-            allowShare={shouldShowShare}
-          />
-          {shouldShowShare && (
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <SocialShareBar
-                title={homePage.title}
-                description={homePage.metaDescription || undefined}
-                url="/"
-                entityLabel="Page"
-              />
-            </div>
-          )}
+          <DynamicPageSections sections={homePage.sections} />
         </main>
 
         <Footer />

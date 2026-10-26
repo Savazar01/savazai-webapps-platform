@@ -2950,39 +2950,6 @@ export default function VisualPageBuilder({ initialPage, id: propId }: VisualPag
               <option value="none">Standard Scroll</option>
             </select>
           </div>
-
-          <div className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-md border border-border/60">
-            <span className="text-[11px] font-mono text-muted-foreground">Social Share:</span>
-            <select
-              value={
-                page.allowShare === true
-                  ? "enable"
-                  : page.allowShare === false
-                  ? "disable"
-                  : "inherit"
-              }
-              onChange={(e) => {
-                const v = e.target.value;
-                const nextVal = v === "enable" ? true : v === "disable" ? false : null;
-                setPage({
-                  ...page,
-                  allowShare: nextVal,
-                });
-                toast.info(
-                  nextVal === true
-                    ? "Social sharing enabled for this page"
-                    : nextVal === false
-                    ? "Social sharing hidden on this page"
-                    : "Social sharing set to inherit global setting"
-                );
-              }}
-              className="text-xs bg-transparent border-0 font-medium text-foreground cursor-pointer focus:outline-none"
-            >
-              <option value="inherit">Inherit Global</option>
-              <option value="enable">Enabled</option>
-              <option value="disable">Hidden on Page</option>
-            </select>
-          </div>
         </div>
 
         {/* Action Buttons */}

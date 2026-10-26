@@ -195,16 +195,21 @@ export function UniversalMediaDialog({
   // Handle local file upload
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    setUploading(true);
+    const fileArray = Array.from(files);
     const uploadedMedia: UniversalMediaItem[] = [];
+    let anyConvertedToWebp = false;
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const rawFile = files[i];
+      for (let i = 0; i < fileArray.length; i++) {
+        const rawFile = fileArray[i];
         const effectiveMediaType = mediaType ?? (rawFile.type.includes("pdf") ? "document" : isArtwork ? "artwork" : "general");
         const effectiveIsArtwork = isArtwork || effectiveMediaType === "artwork";
         const file = effectiveIsArtwork ? rawFile : await optimizeImageForWebpUpload(rawFile);
-        setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`);
+        if (file !== rawFile && file.type === "image/webp") {
+          anyConvertedToWebp = true;
+        }
+        setUploading(true);
+        setUploadProgress(`Uploading ${i + 1} of ${fileArray.length}: ${file.name}`);
 
         const formData = new FormData();
         formData.append("file", file);
@@ -232,7 +237,11 @@ export function UniversalMediaDialog({
         });
       }
 
-      toast.success(`Successfully uploaded ${uploadedMedia.length} asset(s)!`);
+      if (anyConvertedToWebp) {
+        toast.success("Image optimized to WebP and uploaded!");
+      } else {
+        toast.success(`Successfully uploaded ${uploadedMedia.length} asset(s)!`);
+      }
 
       if (allowMultiple && onSelectMultiple) {
         onSelectMultiple(uploadedMedia);

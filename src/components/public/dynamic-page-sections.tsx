@@ -7,7 +7,6 @@ import type { PageMatrixConfig } from "@/components/builder/page-matrix-studio";
 import { cn } from "@/lib/utils";
 import { resolveContainerThemeScope, getContrastTypographyClasses } from "@/lib/theme-contrast";
 import { CatalogScrollEngine, type ScrollTransitionMode } from "@/components/public/catalog-scroll-engine";
-import { SocialShareBar } from "@/components/public/social-share-bar";
 
 export interface DynamicSubSectionItem {
   id?: string;
@@ -157,27 +156,9 @@ export function DynamicPageSections({
                     </span>
                   )}
                   {section.title && (
-                    <div className={cn(
-                      "flex flex-wrap items-center gap-3",
-                      section.titleAlignment === "center"
-                        ? "justify-center"
-                        : section.titleAlignment === "right"
-                        ? "justify-end"
-                        : "justify-start"
-                    )}>
-                      <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight">
-                        {section.title}
-                      </h2>
-                      {allowShare && (
-                        <SocialShareBar
-                          title={section.title}
-                          description={section.description || section.subtitle || undefined}
-                          url={section.slug ? `#${section.slug}` : undefined}
-                          entityLabel="Section"
-                          variant="minimal"
-                        />
-                      )}
-                    </div>
+                    <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight">
+                      {section.title}
+                    </h2>
                   )}
                   {section.description && (
                     <p className="mt-3 text-base text-muted-foreground leading-relaxed">

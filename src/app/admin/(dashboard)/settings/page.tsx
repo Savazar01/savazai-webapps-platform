@@ -34,6 +34,7 @@ import {
   EyeOff,
   Server,
   QrCode,
+  Activity,
 } from "lucide-react";
 import {
   DetailedThemeConfig,
@@ -76,6 +77,7 @@ import { AdminPortalConfig, DEFAULT_ADMIN_CONFIG } from "@/lib/admin-config";
 import { ADMIN_NAV_ITEMS } from "@/components/admin/sidebar";
 import { MailConfigStudio } from "@/components/admin/mail-config-studio";
 import { MediaVaultManager } from "@/components/admin/media-vault-manager";
+import { VisitorAnalyticsPanel } from "@/components/admin/visitor-analytics-panel";
 import {
   SocialPlatformIcon,
   CUSTOM_SOCIAL_ICON_OPTIONS,
@@ -190,7 +192,27 @@ export default function AdminSettingsPage() {
   const [savingTheme, setSavingTheme] = React.useState(false);
 
   // Active Main Tab & Consolidated Hub Sub-Tab States
-  const [activeTab, setActiveTab] = React.useState("general");
+  const [activeTab, setActiveTab] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      const tabParam = new URLSearchParams(window.location.search).get("tab");
+      if (
+        tabParam &&
+        [
+          "general",
+          "personalization",
+          "storage-vault",
+          "email-hub",
+          "footer",
+          "socials",
+          "ai",
+          "telemetry",
+        ].includes(tabParam)
+      ) {
+        return tabParam;
+      }
+    }
+    return "general";
+  });
   const [activePersonalizationSubTab, setActivePersonalizationSubTab] = React.useState<
     "branding" | "theme" | "qr-scan" | "watermark"
   >("branding");
@@ -914,6 +936,12 @@ export default function AdminSettingsPage() {
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1" /> AI Engine
               </TabsTrigger>
+              <TabsTrigger
+                value="telemetry"
+                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
+              >
+                <Activity className="w-3.5 h-3.5 mr-1" /> Visitor Telemetry
+              </TabsTrigger>
             </TabsList>
 
             {/* Tab 1: General */}
@@ -1215,23 +1243,6 @@ export default function AdminSettingsPage() {
                         className="text-xs font-mono"
                       />
                     </div>
-                  </div>
-
-                  {/* Universal Social & Native Sharing Engine Global Toggle */}
-                  <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-sm">
-                        <Share2 className="w-4 h-4 text-primary" />
-                        Universal Social &amp; Native Sharing Engine
-                      </h4>
-                      <p className="text-[11px] text-muted-foreground">
-                        Enable direct sharing across Pages, Sections, Artworks, Events, Photo Galleries, and e-Catalogs (Web Share API on mobile + WhatsApp, Facebook, X, LinkedIn, Pinterest, Email &amp; Copy Link on desktop).
-                      </p>
-                    </div>
-                    <Switch
-                      checked={form.enableSocialShare}
-                      onCheckedChange={(val) => setForm({ ...form, enableSocialShare: val })}
-                    />
                   </div>
 
                   {/* Form Security & Anti-Spam Verification */}
@@ -2701,12 +2712,14 @@ export default function AdminSettingsPage() {
                         Display Social Share Bar in Footer
                       </h4>
                       <p className="text-[11px] text-muted-foreground">
-                        Show a site-wide social &amp; native share bar inside the global public footer (requires global social sharing to be enabled in General settings).
+                        Enable or disable the site-wide social &amp; native share bar inside the global public footer. Turning this off hides social sharing completely across the entire application.
                       </p>
                     </div>
                     <Switch
                       checked={form.showFooterShare}
-                      onCheckedChange={(val) => setForm({ ...form, showFooterShare: val })}
+                      onCheckedChange={(val) =>
+                        setForm({ ...form, showFooterShare: val, enableSocialShare: val })
+                      }
                     />
                   </div>
 
@@ -4379,6 +4392,11 @@ export default function AdminSettingsPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Tab 8: Visitor Telemetry, Geographic Heatmap & Session Analytics */}
+            <TabsContent value="telemetry">
+              <VisitorAnalyticsPanel mode="full" />
+            </TabsContent>
           </Tabs>
         </form>
       )}

@@ -126,13 +126,14 @@ export function MediaVaultManager() {
   const handleVaultUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    const fileArray = Array.from(files);
 
-    setUploadingVault(true);
     try {
       let uploadedCount = 0;
-      for (let i = 0; i < files.length; i++) {
-        const rawFile = files[i];
+      for (let i = 0; i < fileArray.length; i++) {
+        const rawFile = fileArray[i];
         const file = await optimizeImageForWebpUpload(rawFile);
+        setUploadingVault(true);
         const body = new FormData();
         body.append("file", file);
         body.append(

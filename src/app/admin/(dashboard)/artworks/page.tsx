@@ -1401,10 +1401,10 @@ export default function ArtworksAdminPage() {
                 </div>
               </div>
 
-              {/* Materials Used & Surface / Support */}
+              {/* Materials & Surface */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Materials Used</label>
+                  <label className="text-xs font-semibold text-foreground">Materials</label>
                   <Input
                     placeholder="e.g. Natural pigments, shell gold, semi-precious stones"
                     value={materials}
@@ -1421,7 +1421,7 @@ export default function ArtworksAdminPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Surface / Support</label>
+                  <label className="text-xs font-semibold text-foreground">Surface</label>
                   <Input
                     placeholder="e.g. Wasli paper, teakwood plank, silk, khadi cloth"
                     value={surface}
