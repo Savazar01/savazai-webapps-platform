@@ -70,6 +70,8 @@ export async function PUT(
       description,
       dimensions,
       medium,
+      materials,
+      surface,
       yearCreated,
       hasGoldFoil,
       goldPurity,
@@ -95,6 +97,17 @@ export async function PUT(
       );
     }
 
+    const resolvedMaterials = materials !== undefined ? (materials?.trim() || null) : undefined;
+    const resolvedSurface = surface !== undefined ? (surface?.trim() || null) : undefined;
+    const resolvedMedium =
+      materials !== undefined
+        ? resolvedMaterials
+          ? resolvedSurface
+            ? `${resolvedMaterials} on ${resolvedSurface}`
+            : resolvedMaterials
+          : medium || ""
+        : medium;
+
     const updated = await prisma.artwork.update({
       where: { id },
       data: {
@@ -103,7 +116,9 @@ export async function PUT(
         categoryId,
         description,
         dimensions,
-        medium,
+        medium: resolvedMedium,
+        materials: resolvedMaterials,
+        surface: resolvedSurface,
         yearCreated: yearCreated ? parseInt(yearCreated, 10) : undefined,
         hasGoldFoil: hasGoldFoil !== undefined ? !!hasGoldFoil : undefined,
         goldPurity,

@@ -84,6 +84,8 @@ interface Artwork {
   description: string;
   dimensions: string;
   medium: string;
+  materials?: string | null;
+  surface?: string | null;
   yearCreated: number;
   hasGoldFoil: boolean;
   goldPurity: string | null;
@@ -132,6 +134,8 @@ export default function ArtworksAdminPage() {
   const [description, setDescription] = React.useState("");
   const [dimensions, setDimensions] = React.useState("24 x 36 inches");
   const [medium, setMedium] = React.useState("Gold Foil, Teakwood, Semi-Precious Gemstones");
+  const [materials, setMaterials] = React.useState("Natural pigments, shell gold, semi-precious stones");
+  const [surface, setSurface] = React.useState("Teakwood plank");
   const [yearCreated, setYearCreated] = React.useState(new Date().getFullYear().toString());
   const [hasGoldFoil, setHasGoldFoil] = React.useState(false);
   const [goldPurity, setGoldPurity] = React.useState("");
@@ -274,6 +278,8 @@ export default function ArtworksAdminPage() {
     setDescription("");
     setDimensions("24 x 36 inches");
     setMedium("Gold Foil, Teakwood, Semi-Precious Gemstones");
+    setMaterials("Natural pigments, shell gold, semi-precious stones");
+    setSurface("Teakwood plank");
     setYearCreated(new Date().getFullYear().toString());
     setHasGoldFoil(false);
     setGoldPurity("");
@@ -305,6 +311,8 @@ export default function ArtworksAdminPage() {
     setDescription(art.description);
     setDimensions(art.dimensions);
     setMedium(art.medium);
+    setMaterials(art.materials || art.medium || "");
+    setSurface(art.surface || "");
     setYearCreated(art.yearCreated.toString());
     setHasGoldFoil(art.hasGoldFoil);
     setGoldPurity(art.goldPurity || "");
@@ -447,13 +455,23 @@ export default function ArtworksAdminPage() {
     }
 
     setSaving(true);
+    const resolvedMaterials = materials.trim() || medium.trim();
+    const resolvedSurface = surface.trim();
+    const resolvedMedium = resolvedMaterials
+      ? resolvedSurface
+        ? `${resolvedMaterials} on ${resolvedSurface}`
+        : resolvedMaterials
+      : medium;
+
     const payload = {
       title,
       slug,
       categoryId,
       description,
       dimensions,
-      medium,
+      medium: resolvedMedium,
+      materials: resolvedMaterials || null,
+      surface: resolvedSurface || null,
       yearCreated: parseInt(yearCreated, 10),
       hasGoldFoil,
       goldPurity: hasGoldFoil && goldPurity?.trim() ? goldPurity.trim() : null,
@@ -646,10 +664,13 @@ export default function ArtworksAdminPage() {
   const filteredArtworks = artworks.filter((art) => {
     const matchesCategory =
       selectedCategory === "ALL" || art.categoryId === selectedCategory;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.medium.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.category?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      art.title.toLowerCase().includes(q) ||
+      (art.materials || art.medium || "").toLowerCase().includes(q) ||
+      (art.surface || "").toLowerCase().includes(q) ||
+      art.medium.toLowerCase().includes(q) ||
+      art.category?.name.toLowerCase().includes(q);
     return matchesCategory && matchesSearch;
   });
 
@@ -951,7 +972,8 @@ export default function ArtworksAdminPage() {
                 </div>
 
                 <p className="text-[11px] text-muted-foreground line-clamp-1">
-                  {art.medium} • {art.dimensions}
+                  {art.materials || art.medium}
+                  {art.surface ? ` • ${art.surface}` : ""} • {art.dimensions}
                 </p>
 
                 {/* Visibility & Homepage Toggles */}
@@ -1046,7 +1068,7 @@ export default function ArtworksAdminPage() {
                 </TableHead>
                 <TableHead className="w-12">Preview</TableHead>
                 <TableHead>Title &amp; Category</TableHead>
-                <TableHead>Medium &amp; Dimensions</TableHead>
+                <TableHead>Materials, Surface &amp; Dimensions</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -1090,7 +1112,10 @@ export default function ArtworksAdminPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    <div>{art.medium}</div>
+                    <div>{art.materials || art.medium}</div>
+                    {art.surface && (
+                      <div className="text-[11px] text-foreground/80">Surface: {art.surface}</div>
+                    )}
                     <div className="font-mono text-[11px]">{art.dimensions}</div>
                   </TableCell>
                   <TableCell>
@@ -1376,27 +1401,51 @@ export default function ArtworksAdminPage() {
                 </div>
               </div>
 
-              {/* Medium & Dimensions */}
+              {/* Materials Used & Surface / Support */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Medium Used</label>
+                  <label className="text-xs font-semibold text-foreground">Materials Used</label>
                   <Input
-                    placeholder="e.g. Archival canvas, titanium alloy, hand-woven silk, or composite media"
-                    value={medium}
-                    onChange={(e) => setMedium(e.target.value)}
+                    placeholder="e.g. Natural pigments, shell gold, semi-precious stones"
+                    value={materials}
+                    onChange={(e) => {
+                      setMaterials(e.target.value);
+                      setMedium(
+                        surface.trim()
+                          ? `${e.target.value} on ${surface.trim()}`
+                          : e.target.value
+                      );
+                    }}
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Dimensions</label>
+                  <label className="text-xs font-semibold text-foreground">Surface / Support</label>
                   <Input
-                    placeholder="e.g. 24 x 36 inches"
-                    value={dimensions}
-                    onChange={(e) => setDimensions(e.target.value)}
-                    required
+                    placeholder="e.g. Wasli paper, teakwood plank, silk, khadi cloth"
+                    value={surface}
+                    onChange={(e) => {
+                      setSurface(e.target.value);
+                      setMedium(
+                        e.target.value.trim()
+                          ? `${materials.trim()} on ${e.target.value.trim()}`
+                          : materials.trim()
+                      );
+                    }}
                   />
                 </div>
+              </div>
+
+              {/* Dimensions */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">Dimensions</label>
+                <Input
+                  placeholder="e.g. 24 x 36 inches"
+                  value={dimensions}
+                  onChange={(e) => setDimensions(e.target.value)}
+                  required
+                />
               </div>
 
               {/* Gold Foil Details */}

@@ -530,5 +530,35 @@ All code generation and architectural modifications must adhere to the specializ
 - **Server-Driven Stale Cookie Eviction**:
   - When administrative route handlers (`/api/admin/*`) return HTTP 401 Unauthorized, they must explicitly delete `better-auth.session_token`, `__Secure-better-auth.session_token`, and `better-auth.session_data` in the response headers, breaking browser cookie persistence.
 
+### AA. Artwork Metadata Split (`materials` & `surface`), Media Vault Asset Manager, Admin Hub Consolidation, Dynamic Social Platforms & Universal Video/Embed Blocks
+- **Non-Destructive Artwork Schema Split (`materials` + `surface`)**:
+  - In `prisma/schema.prisma`, `Artwork` includes `materials String?` (e.g. *Natural pigments, shell gold, semi-precious stones*) and `surface String?` (e.g. *Wasli paper, teakwood plank, silk, khadi cloth*), while retaining `medium String?` for backward compatibility.
+  - All existing `medium` values are backfilled into `materials` via `prisma/migrations/20261026_artwork_materials_surface_split/migration.sql` with zero data loss.
+  - Public detail views (`/artwork/[slug]`), e-Catalog readers (`/catalogs/[slug]`), physical placards (`src/components/admin/artwork-placard-sheet.tsx`), and CSV/Excel import/export routes render `materials` (falling back to `medium`) and `surface` cleanly without undefined placeholders.
+- **Consolidated System Admin Navigation Hubs (`src/app/admin/(dashboard)/settings/page.tsx`)**:
+  - **Storage & Media Vault**: Unified main tab with 4 responsive sub-tabs:
+    1. *Cloudflare R2 / S3 Storage*
+    2. *Google Workspace*
+    3. *Nextcloud Hub*
+    4. *Manage Media Vault* (`<MediaVaultManager />`)
+  - **E-Mail Configuration**: Unified main tab with 2 responsive sub-tabs:
+    1. *SMTP & Gmail Provider Settings*
+    2. *Mail Notification Templates* (`<MailConfigStudio />`)
+  - **App Personalization**: Unified main tab with 4 responsive sub-tabs:
+    1. *White-Label Branding*
+    2. *Theme Studio*
+    3. *QR Scan Gate*
+    4. *Watermark & Anti-Harvesting*
+- **Media Vault Asset Manager & Orphan Detection (`src/app/api/admin/media/vault/route.ts` & `src/components/admin/media-vault-manager.tsx`)**:
+  - Scans storage assets (`/public/media`, `/public/documents`), extracts image dimensions via `sharp`, and builds a complete **"Where Used" Dependency Matrix** across `Artwork`, `ECatalog`, `ArtCategory`, `Page` (`PageSection`, `SubSection`), `Event`, `BlogPost`, and `SystemSetting`.
+  - Provides **"Show Unlinked / Inactive Assets Only"** orphan filtering, one-click orphan batch selection, and **"Delete Permanently from Storage"** with confirmation modal.
+- **Expanded Social Platforms & Custom Link Selector (`src/components/public/social-icon.tsx` & `src/components/public/footer.tsx`)**:
+  - `SystemSetting` supports built-in `linkedinUrl`, `tiktokUrl`, `pinterestUrl`, `instagramUrl`, `facebookUrl`, `youtubeUrl`, plus a flexible `customSocialLinks` JSON array (`[{ label, url, icon }]`) with 20 selectable vector icons and `rel="noopener noreferrer" target="_blank"`.
+- **Universal Video Embed Parser (`src/lib/video-embed-parser.ts` & `src/components/public/builder/video-block.tsx`)**:
+  - Automatically transforms standard watch/post URLs (YouTube `watch?v=`, `youtu.be/`, `shorts/`, Vimeo, Facebook Videos, Instagram Posts/Reels) into valid embed URLs (`youtube-nocookie.com/embed/ID`, `player.vimeo.com/video/ID`, etc.) or native HTML5 `<video controls playsInline />`, eliminating `X-Frame-Options: SAMEORIGIN` / "This Content is blocked" iframe errors.
+- **Page Builder Embed Code / Source HTML Block (`src/components/public/builder/embed-block.tsx`)**:
+  - Added `+ Embed / HTML` (`EMBED_HTML`) block to the Page Builder Row toolbar (`builder-client.tsx` and `page-matrix-studio.tsx`) with aspect ratio controls (`16:9`, `4:3`, `1:1`, `auto`) and security sandboxing toggles (`sandboxed` iframe vs `unconstrained` trusted script execution for Stripe, Razorpay, Calendly, Spotify, or social embeds).
+
+
 
 

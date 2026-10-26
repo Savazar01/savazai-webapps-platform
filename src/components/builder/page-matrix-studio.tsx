@@ -28,6 +28,7 @@ import {
   Send,
   Loader2,
   Maximize2,
+  Code,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TiptapEditor } from "@/components/builder/tiptap-editor";
 import { AiAssistantModal } from "@/components/admin/ai-assistant-modal";
 import { ColumnBlock } from "@/components/public/tiptap-renderer";
+import { VideoBlock } from "@/components/public/builder/video-block";
+import { EmbedBlock, type EmbedAspectRatio, type EmbedSandboxMode } from "@/components/public/builder/embed-block";
 import { TimelineInspector } from "@/components/builder/timeline-inspector";
 import type { TimelineMilestone } from "@/components/public/blocks/timeline-block";
 import type { TimelineGranularity, TimelineLayout, TimelineItem } from "@/types/timeline";
@@ -477,6 +480,14 @@ export function PageMatrixStudio({
                 linkType: "none" as const,
               },
             ],
+          }
+        : {}),
+      ...(type === "EMBED_HTML"
+        ? {
+            embedHtml: "",
+            embedCaption: "",
+            embedAspectRatio: "16:9" as const,
+            embedSandboxMode: "sandboxed" as const,
           }
         : {}),
     };
@@ -1228,6 +1239,15 @@ export function PageMatrixStudio({
                       type="button"
                       variant="outline"
                       size="sm"
+                      onClick={() => addBlockToCell(selectedCell.row, selectedCell.col, "EMBED_HTML")}
+                      className="h-6 text-[10px] px-2 gap-1 border-primary/30"
+                    >
+                      <Code className="w-2.5 h-2.5 text-primary" /> Embed / HTML
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => addBlockToCell(selectedCell.row, selectedCell.col, "PDF_VIEWER")}
                       className="h-6 text-[10px] px-2 gap-1 border-primary/30"
                     >
@@ -1430,8 +1450,10 @@ export function PageMatrixStudio({
 
                       {/* VIDEO Block */}
                       {block.type === "VIDEO" && (
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-mono text-muted-foreground">Video Embed URL</label>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-mono text-muted-foreground">
+                            Video URL (YouTube, Vimeo, Facebook, Instagram, MP4)
+                          </label>
                           <Input
                             value={block.videoUrl || ""}
                             onChange={(e) =>
@@ -1440,8 +1462,69 @@ export function PageMatrixStudio({
                               })
                             }
                             placeholder="https://www.youtube.com/watch?v=..."
-                            className="h-7 text-xs"
+                            className="h-7 text-xs font-mono"
                           />
+                          {block.videoUrl && (
+                            <VideoBlock videoUrl={block.videoUrl} caption={block.mediaAlt} />
+                          )}
+                        </div>
+                      )}
+
+                      {/* EMBED_HTML Block */}
+                      {block.type === "EMBED_HTML" && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-[10px] font-mono text-muted-foreground">
+                              Embed / HTML Code
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                value={block.embedAspectRatio || "16:9"}
+                                onChange={(e) =>
+                                  updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                    embedAspectRatio: e.target.value as EmbedAspectRatio,
+                                  })
+                                }
+                                className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                              >
+                                <option value="16:9">16:9</option>
+                                <option value="4:3">4:3</option>
+                                <option value="1:1">1:1</option>
+                                <option value="auto">Natural</option>
+                              </select>
+                              <select
+                                value={block.embedSandboxMode || "sandboxed"}
+                                onChange={(e) =>
+                                  updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                    embedSandboxMode: e.target.value as EmbedSandboxMode,
+                                  })
+                                }
+                                className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                              >
+                                <option value="sandboxed">Sandboxed</option>
+                                <option value="unconstrained">Unconstrained</option>
+                              </select>
+                            </div>
+                          </div>
+                          <textarea
+                            rows={3}
+                            value={block.embedHtml || ""}
+                            onChange={(e) =>
+                              updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                embedHtml: e.target.value,
+                              })
+                            }
+                            placeholder='Paste <iframe src="..."> or widget snippet...'
+                            className="w-full text-xs p-2 rounded border border-border bg-slate-950 text-emerald-300 font-mono"
+                          />
+                          {block.embedHtml && (
+                            <EmbedBlock
+                              embedHtml={block.embedHtml}
+                              caption={block.embedCaption}
+                              aspectRatio={block.embedAspectRatio || "16:9"}
+                              sandboxMode={block.embedSandboxMode || "sandboxed"}
+                            />
+                          )}
                         </div>
                       )}
 

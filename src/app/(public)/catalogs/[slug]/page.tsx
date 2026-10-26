@@ -1498,9 +1498,15 @@ export default async function ECatalogReaderPage({ params, searchParams }: PageP
 
                       <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-foreground/90 border-t border-primary/20 pt-2.5">
                         <p>
-                          <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Medium:</strong>
-                          <span>{item.artwork.medium || "Natural Mineral Pigments & Gold Foil"}</span>
+                          <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Materials:</strong>
+                          <span>{item.artwork.materials || item.artwork.medium || "Natural Mineral Pigments & Gold Foil"}</span>
                         </p>
+                        {item.artwork.surface && item.artwork.surface.trim() !== "" && (
+                          <p>
+                            <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Surface:</strong>
+                            <span>{item.artwork.surface}</span>
+                          </p>
+                        )}
                         {item.artwork.dimensions && (
                           <p>
                             <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Dimensions:</strong>
@@ -1609,9 +1615,15 @@ export default async function ECatalogReaderPage({ params, searchParams }: PageP
 
                           <div className="space-y-1.5 text-xs text-foreground/90 border-t border-primary/20 pt-3">
                             <p>
-                              <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Medium:</strong>
-                              <span>{item.artwork.medium || "Natural Mineral Pigments & Gold Foil"}</span>
+                              <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Materials:</strong>
+                              <span>{item.artwork.materials || item.artwork.medium || "Natural Mineral Pigments & Gold Foil"}</span>
                             </p>
+                            {item.artwork.surface && item.artwork.surface.trim() !== "" && (
+                              <p>
+                                <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Surface:</strong>
+                                <span>{item.artwork.surface}</span>
+                              </p>
+                            )}
                             {item.artwork.dimensions && (
                               <p>
                                 <strong className="text-muted-foreground font-mono text-[11px] uppercase mr-1">Dimensions:</strong>
@@ -1683,9 +1695,15 @@ export default async function ECatalogReaderPage({ params, searchParams }: PageP
                             {displayTitle}
                           </h3>
                           <p className="text-xs text-stone-400 font-sans mt-0.5">
-                            {displaySubtitle}
-                            {item.artwork.dimensions ? ` • ${item.artwork.dimensions}` : ""}
-                            {item.artwork.yearCreated ? ` • ${item.artwork.yearCreated}` : ""}
+                            {[
+                              displaySubtitle,
+                              item.artwork.materials || item.artwork.medium,
+                              item.artwork.surface ? `Surface: ${item.artwork.surface}` : "",
+                              item.artwork.dimensions,
+                              item.artwork.yearCreated ? String(item.artwork.yearCreated) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" • ")}
                           </p>
                         </div>
                         <div className="print-hidden">

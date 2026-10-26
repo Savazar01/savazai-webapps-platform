@@ -23,6 +23,13 @@ export async function GET() {
         qrGateButtonLabel: true,
         qrGateAllowSkip: true,
         formSecurityConfig: true,
+        instagramUrl: true,
+        youtubeUrl: true,
+        facebookUrl: true,
+        pinterestUrl: true,
+        linkedinUrl: true,
+        tiktokUrl: true,
+        customSocialLinks: true,
       },
     });
 
@@ -49,6 +56,13 @@ export async function GET() {
           'Enter your details to explore details of the Artwork "{{artworkName}}".',
         qrGateButtonLabel: settings?.qrGateButtonLabel || "Unlock Masterwork Details",
         qrGateAllowSkip: settings?.qrGateAllowSkip !== false,
+        instagramUrl: settings?.instagramUrl || null,
+        youtubeUrl: settings?.youtubeUrl || null,
+        facebookUrl: settings?.facebookUrl || null,
+        pinterestUrl: settings?.pinterestUrl || null,
+        linkedinUrl: settings?.linkedinUrl || null,
+        tiktokUrl: settings?.tiktokUrl || null,
+        customSocialLinks: Array.isArray(settings?.customSocialLinks) ? settings.customSocialLinks : [],
         formSecurityConfig: {
           contactForm: {
             enableCaptcha: Boolean(contactForm.enableCaptcha),

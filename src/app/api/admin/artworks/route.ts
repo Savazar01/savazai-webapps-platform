@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { title: { contains: q, mode: "insensitive" } },
         { medium: { contains: q, mode: "insensitive" } },
+        { materials: { contains: q, mode: "insensitive" } },
+        { surface: { contains: q, mode: "insensitive" } },
         { description: { contains: q, mode: "insensitive" } },
       ];
     }
@@ -82,6 +84,8 @@ export async function POST(request: NextRequest) {
       description,
       dimensions,
       medium,
+      materials,
+      surface,
       yearCreated,
       hasGoldFoil,
       goldPurity,
@@ -130,6 +134,14 @@ export async function POST(request: NextRequest) {
       console.warn("QR generation background notice:", err);
     });
 
+    const resolvedMaterials = (materials ?? medium ?? "Natural pigments, shell gold, semi-precious stones").trim();
+    const resolvedSurface = surface?.trim() || null;
+    const resolvedLegacyMedium = resolvedMaterials
+      ? resolvedSurface
+        ? `${resolvedMaterials} on ${resolvedSurface}`
+        : resolvedMaterials
+      : medium || "Gold Foil, Teakwood, Semi-Precious Gemstones";
+
     const artwork = await prisma.artwork.create({
       data: {
         title,
@@ -137,7 +149,9 @@ export async function POST(request: NextRequest) {
         categoryId,
         description: description || "",
         dimensions: dimensions || "24 x 36 inches",
-        medium: medium || "Gold Foil, Teakwood, Semi-Precious Gemstones",
+        medium: resolvedLegacyMedium,
+        materials: resolvedMaterials || null,
+        surface: resolvedSurface,
         yearCreated: parseInt(yearCreated, 10) || new Date().getFullYear(),
         hasGoldFoil: !!hasGoldFoil,
         goldPurity: hasGoldFoil && goldPurity?.trim() ? goldPurity.trim() : null,

@@ -72,6 +72,8 @@ export interface PlacardArtwork {
   title: string;
   slug: string;
   medium?: string;
+  materials?: string | null;
+  surface?: string | null;
   dimensions?: string;
   traditionalSchool?: string;
   yearCreated?: number | string;
@@ -377,12 +379,20 @@ export function ArtworkPlacardSheet({
           : "";
       const effectiveCurrency = over.currency || live?.currency || art.currency || "INR";
 
+      const baseMaterials = art.materials?.trim() || art.medium?.trim() || "";
+      const baseSurface = art.surface?.trim() || "";
+      const defaultMediumText = baseMaterials
+        ? baseSurface
+          ? `${baseMaterials} on ${baseSurface}`
+          : baseMaterials
+        : "22k Gold Foil, Gesso, Teak Wood";
+
       return {
         id: art.id,
         title: over.title ?? art.title ?? "",
         artistName: over.artistName ?? globalArtistName,
         category: over.category ?? art.traditionalSchool ?? art.category?.name ?? "Traditional Indian Art",
-        medium: over.medium ?? art.medium ?? "22k Gold Foil, Gesso, Teak Wood",
+        medium: over.medium ?? defaultMediumText,
         dimensions: over.dimensions ?? art.dimensions ?? "",
         year: over.year ?? (art.yearCreated ? String(art.yearCreated) : ""),
         price: effectivePrice,

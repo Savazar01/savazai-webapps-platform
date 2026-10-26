@@ -19,6 +19,8 @@ import { PdfViewerBlock } from "@/components/public/blocks/pdf-viewer-block";
 import { TimelineBlock, TimelineMilestone } from "@/components/public/blocks/timeline-block";
 import { DynamicFormBlock, FormFieldConfig, DynamicFormConfig } from "@/components/public/blocks/dynamic-form-block";
 import { MediaGalleryBlock, MediaGalleryItem, MediaGalleryDisplayMode } from "@/components/public/blocks/media-gallery-block";
+import { VideoBlock } from "@/components/public/builder/video-block";
+import { EmbedBlock, type EmbedAspectRatio, type EmbedSandboxMode } from "@/components/public/builder/embed-block";
 import type { ExhibitionWallConfig } from "@/components/public/blocks/gallery-exhibition-wall/exhibition-wall-block";
 import { HeroShowcaseBlock, type HeroArchetype, type HotspotPin } from "@/components/public/blocks/hero-showcase-block";
 import { ArchetypeShowcaseBlock } from "@/components/public/blocks/landing/archetype-showcase-blocks";
@@ -647,36 +649,9 @@ function renderMediaBlock(media: MediaBlockConfig): React.ReactNode {
   }
 
   if (media.mediaType === "VIDEO" && media.videoUrl) {
-    const url = media.videoUrl;
-    const isYouTube = url.includes("youtube.com") || url.includes("youtu.be");
-    const isVimeo = url.includes("vimeo.com");
-
-    let embedSrc = url;
-    if (isYouTube) {
-      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-      if (match) embedSrc = `https://www.youtube-nocookie.com/embed/${match[1]}`;
-    } else if (isVimeo) {
-      const match = url.match(/vimeo\.com\/(\d+)/);
-      if (match) embedSrc = `https://player.vimeo.com/video/${match[1]}`;
-    }
-
-    if (isYouTube || isVimeo) {
-      return (
-        <div className="mb-6 aspect-video w-full rounded-xl overflow-hidden shadow-xl border border-border">
-          <iframe
-            src={embedSrc}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      );
-    }
-
-    // Direct MP4 / WebM
     return (
-      <div className="mb-6 w-full rounded-xl overflow-hidden shadow-xl border border-border">
-        <video src={url} controls className="w-full max-h-[480px] bg-black" />
+      <div className="mb-6 w-full">
+        <VideoBlock videoUrl={media.videoUrl} caption={media.mediaAlt} />
       </div>
     );
   }
@@ -739,7 +714,8 @@ export interface ColumnBlock {
     | "METRIC_GRID"
     | "TABBED_FEATURE_BLOCK"
     | "FEATURE_GRID"
-    | "ACCORDION_BLOCK";
+    | "ACCORDION_BLOCK"
+    | "EMBED_HTML";
   data?: Record<string, unknown>;
   content?: Record<string, unknown>;
   mediaUrl?: string;
@@ -756,6 +732,11 @@ export interface ColumnBlock {
   buttonUrl?: string;
   buttonVariant?: "gold" | "outline" | "temple";
   blogLimit?: number;
+  // Embed / HTML Block Properties
+  embedHtml?: string;
+  embedCaption?: string;
+  embedAspectRatio?: EmbedAspectRatio;
+  embedSandboxMode?: EmbedSandboxMode;
   // PDF Viewer Properties
   pdfUrl?: string;
   fileUrl?: string;
@@ -861,11 +842,24 @@ export function renderColumnBlock(
 
   if (block.type === "VIDEO") {
     return (
-      <div key={block.id}>
-        {renderMediaBlock({
-          mediaType: "VIDEO",
-          videoUrl: block.videoUrl,
-        })}
+      <div key={block.id} className="my-2 w-full">
+        <VideoBlock
+          videoUrl={block.videoUrl}
+          caption={block.mediaAlt || block.title}
+        />
+      </div>
+    );
+  }
+
+  if (block.type === "EMBED_HTML") {
+    return (
+      <div key={block.id} className="my-2 w-full">
+        <EmbedBlock
+          embedHtml={block.embedHtml}
+          caption={block.embedCaption || block.title}
+          aspectRatio={block.embedAspectRatio}
+          sandboxMode={block.embedSandboxMode}
+        />
       </div>
     );
   }

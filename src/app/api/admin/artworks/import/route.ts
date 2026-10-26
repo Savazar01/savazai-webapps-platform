@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
       else if (headerText.includes("parent") || headerText.includes("category")) colMap["parentCategory"] = colNumber;
       else if (headerText.includes("school")) colMap["traditionalSchool"] = colNumber;
       else if (headerText.includes("year")) colMap["yearCreated"] = colNumber;
+      else if (headerText.includes("material")) colMap["materials"] = colNumber;
+      else if (headerText.includes("surface") || headerText.includes("support")) colMap["surface"] = colNumber;
       else if (headerText.includes("medium")) colMap["medium"] = colNumber;
       else if (headerText.includes("dimension")) colMap["dimensions"] = colNumber;
       else if (headerText.includes("has gold") || headerText.includes("gold foil")) colMap["hasGoldFoil"] = colNumber;
@@ -156,7 +158,16 @@ export async function POST(request: NextRequest) {
         const parentCategoryVal = getCellValue(row, colMap["parentCategory"]) || "Tanjore";
         const subCategoryVal = getCellValue(row, colMap["subCategory"]);
         const yearCreatedVal = parseNumber(getCellValue(row, colMap["yearCreated"])) || new Date().getFullYear();
-        const mediumVal = getCellValue(row, colMap["medium"]) || "22k Gold Foil, Teakwood, Semi-Precious Gemstones";
+        const materialsVal = getCellValue(row, colMap["materials"]);
+        const surfaceVal = getCellValue(row, colMap["surface"]);
+        const rawMediumVal = getCellValue(row, colMap["medium"]);
+        const resolvedMaterials = materialsVal || rawMediumVal || "22k Gold Foil, Teakwood, Semi-Precious Gemstones";
+        const resolvedSurface = surfaceVal || null;
+        const mediumVal = resolvedMaterials
+          ? resolvedSurface
+            ? `${resolvedMaterials} on ${resolvedSurface}`
+            : resolvedMaterials
+          : rawMediumVal || "22k Gold Foil, Teakwood, Semi-Precious Gemstones";
         const dimensionsVal = getCellValue(row, colMap["dimensions"]) || "24 x 36 inches";
         const priceVal = parseNumber(getCellValue(row, colMap["price"]));
         const currencyVal = getCellValue(row, colMap["currency"]) || "INR";
@@ -267,6 +278,8 @@ export async function POST(request: NextRequest) {
               categoryId,
               dimensions: dimensionsVal,
               medium: mediumVal,
+              materials: resolvedMaterials,
+              surface: resolvedSurface,
               yearCreated: yearCreatedVal,
               hasGoldFoil: hasGoldFoilVal,
               goldPurity: goldPurityVal,
@@ -312,6 +325,8 @@ export async function POST(request: NextRequest) {
               categoryId,
               dimensions: dimensionsVal,
               medium: mediumVal,
+              materials: resolvedMaterials,
+              surface: resolvedSurface,
               yearCreated: yearCreatedVal,
               hasGoldFoil: hasGoldFoilVal,
               goldPurity: goldPurityVal,

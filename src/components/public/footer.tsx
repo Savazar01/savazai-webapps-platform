@@ -1,7 +1,8 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { Sparkles, Mail, Phone, ExternalLink } from "lucide-react";
+import { Sparkles, Mail, Phone } from "lucide-react";
 import { PrivacyModalTrigger } from "./privacy-request-modal";
+import { SocialPlatformIcon, type CustomSocialLink } from "./social-icon";
 
 interface SocialLinkItem {
   platform: string;
@@ -56,29 +57,50 @@ export async function Footer() {
 
   // Strict Zero-Fallback Social Channels Extraction:
   // Direct setting values strictly govern the standard channels. If empty/blank, they MUST NOT render.
-  const activeSocials: { platform: string; url: string }[] = [];
+  const activeSocials: { platform: string; url: string; icon: string }[] = [];
 
   const directInstagram = settings?.instagramUrl?.trim();
   const directFacebook = settings?.facebookUrl?.trim();
   const directYouTube = settings?.youtubeUrl?.trim();
   const directPinterest = settings?.pinterestUrl?.trim();
+  const directLinkedin = (settings as { linkedinUrl?: string | null } | null)?.linkedinUrl?.trim();
+  const directTiktok = (settings as { tiktokUrl?: string | null } | null)?.tiktokUrl?.trim();
 
   if (directInstagram) {
-    activeSocials.push({ platform: "Instagram", url: directInstagram });
+    activeSocials.push({ platform: "Instagram", url: directInstagram, icon: "instagram" });
   }
   if (directFacebook) {
-    activeSocials.push({ platform: "Facebook", url: directFacebook });
+    activeSocials.push({ platform: "Facebook", url: directFacebook, icon: "facebook" });
   }
   if (directYouTube) {
-    activeSocials.push({ platform: "YouTube", url: directYouTube });
+    activeSocials.push({ platform: "YouTube", url: directYouTube, icon: "youtube" });
   }
   if (directPinterest) {
-    activeSocials.push({ platform: "Pinterest", url: directPinterest });
+    activeSocials.push({ platform: "Pinterest", url: directPinterest, icon: "pinterest" });
+  }
+  if (directLinkedin) {
+    activeSocials.push({ platform: "LinkedIn", url: directLinkedin, icon: "linkedin" });
+  }
+  if (directTiktok) {
+    activeSocials.push({ platform: "TikTok", url: directTiktok, icon: "tiktok" });
+  }
+
+  // Dynamic Custom Social Links from SystemSetting.customSocialLinks
+  const customSocials = (settings as { customSocialLinks?: CustomSocialLink[] | null } | null)?.customSocialLinks;
+  if (Array.isArray(customSocials)) {
+    customSocials.forEach((item) => {
+      const label = (item?.label || "").trim();
+      const url = (item?.url || "").trim();
+      const icon = (item?.icon || "globe").trim();
+      if (label && url) {
+        activeSocials.push({ platform: label, url, icon });
+      }
+    });
   }
 
   // Standard platforms are strictly governed by their direct columns above.
   // Auxiliary platforms (e.g. SoundCloud, X / Twitter) in footerConfig.socialLinks are included only if non-empty and visible.
-  const standardPlatforms = new Set(["instagram", "facebook", "youtube", "pinterest"]);
+  const standardPlatforms = new Set(["instagram", "facebook", "youtube", "pinterest", "linkedin", "tiktok"]);
 
   if (Array.isArray(footerConfig?.socialLinks)) {
     footerConfig.socialLinks.forEach((link) => {
@@ -90,7 +112,7 @@ export async function Footer() {
       if (!standardPlatforms.has(pKey) && link.isVisible !== false && trimmedUrl.length > 0) {
         const alreadyExists = activeSocials.some((s) => s.platform.toLowerCase() === pKey);
         if (!alreadyExists) {
-          activeSocials.push({ platform: pName, url: trimmedUrl });
+          activeSocials.push({ platform: pName, url: trimmedUrl, icon: pKey });
         }
       }
     });
@@ -225,15 +247,15 @@ export async function Footer() {
                   </a>
                 </li>
               )}
-              {activeSocials.map((s) => (
-                <li key={s.platform}>
+              {activeSocials.map((s, idx) => (
+                <li key={`${s.platform}-${idx}`}>
                   <a
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+                    className="inline-flex items-center gap-2 hover:text-primary transition-colors"
                   >
-                    <ExternalLink className="w-3 h-3 text-primary" />
+                    <SocialPlatformIcon iconKey={s.icon || s.platform} className="w-3.5 h-3.5 text-primary shrink-0" />
                     <span>{s.platform}</span>
                   </a>
                 </li>

@@ -57,12 +57,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: `Artwork Not Found — ${siteName}` };
   }
 
+  const materialsText = artwork.materials || artwork.medium;
+  const fullMediumDesc = artwork.surface ? `${materialsText} on ${artwork.surface}` : materialsText;
+
   return {
     title: `${artwork.title} (${artwork.yearCreated}) — Fine Art by ${artistName}`,
-    description: `${artwork.medium}. ${artwork.description.slice(0, 160)}...`,
+    description: `${fullMediumDesc}. ${artwork.description.slice(0, 160)}...`,
     openGraph: {
       title: artwork.title,
-      description: artwork.medium,
+      description: fullMediumDesc,
       images: [{ url: artwork.watermarkedWebpUrl }],
     },
   };
@@ -160,7 +163,10 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             <ArtCanvasViewer
               title={artwork.title}
               watermarkedUrl={artwork.watermarkedWebpUrl}
-              medium={artwork.medium}
+              medium={
+                (artwork.materials || artwork.medium) +
+                (artwork.surface ? ` on ${artwork.surface}` : "")
+              }
               dimensions={artwork.dimensions}
               hasGoldFoil={artwork.hasGoldFoil && showFoilEarmark}
               goldPurity={artwork.goldPurity || undefined}
@@ -219,11 +225,19 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             {/* Specifications Matrix */}
             <div className="p-4 rounded-xl border border-border bg-card/50 space-y-2.5 text-xs">
               <div className="flex justify-between py-1 border-b border-border/40">
-                <span className="text-muted-foreground font-medium">Medium</span>
-                <span className="font-serif text-right text-foreground max-w-[200px]">
-                  {artwork.medium}
+                <span className="text-muted-foreground font-medium">Materials Used</span>
+                <span className="font-serif text-right text-foreground max-w-[220px]">
+                  {artwork.materials || artwork.medium}
                 </span>
               </div>
+              {artwork.surface && artwork.surface.trim() !== "" && (
+                <div className="flex justify-between py-1 border-b border-border/40">
+                  <span className="text-muted-foreground font-medium">Surface / Support</span>
+                  <span className="font-serif text-right text-foreground max-w-[220px]">
+                    {artwork.surface}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between py-1 border-b border-border/40">
                 <span className="text-muted-foreground font-medium">Dimensions</span>
                 <span className="font-mono text-foreground">{artwork.dimensions}</span>

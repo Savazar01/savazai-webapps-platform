@@ -75,6 +75,12 @@ import { EditablePageHeader } from "@/components/admin/editable-page-header";
 import { AdminPortalConfig, DEFAULT_ADMIN_CONFIG } from "@/lib/admin-config";
 import { ADMIN_NAV_ITEMS } from "@/components/admin/sidebar";
 import { MailConfigStudio } from "@/components/admin/mail-config-studio";
+import { MediaVaultManager } from "@/components/admin/media-vault-manager";
+import {
+  SocialPlatformIcon,
+  CUSTOM_SOCIAL_ICON_OPTIONS,
+  type CustomSocialLink,
+} from "@/components/public/social-icon";
 
 interface LegalLinkItem {
   label: string;
@@ -183,8 +189,16 @@ export default function AdminSettingsPage() {
   const [activeThemeSubTab, setActiveThemeSubTab] = React.useState<"common" | "light" | "dark">("common");
   const [savingTheme, setSavingTheme] = React.useState(false);
 
-  // Active Main Tab State
+  // Active Main Tab & Consolidated Hub Sub-Tab States
   const [activeTab, setActiveTab] = React.useState("general");
+  const [activePersonalizationSubTab, setActivePersonalizationSubTab] = React.useState<
+    "branding" | "theme" | "qr-scan" | "watermark"
+  >("branding");
+  const [activeStorageSubTab, setActiveStorageSubTab] = React.useState<
+    "r2-s3" | "google-workspace" | "nextcloud" | "media-vault"
+  >("r2-s3");
+  const [activeEmailSubTab, setActiveEmailSubTab] = React.useState<"smtp" | "templates">("smtp");
+  const [customSocialLinks, setCustomSocialLinks] = React.useState<CustomSocialLink[]>([]);
 
   // Google Workspace Config State
   const [googleServicesConfig, setGoogleServicesConfig] = React.useState<GoogleServicesConfig>({
@@ -288,6 +302,8 @@ export default function AdminSettingsPage() {
     youtubeUrl: "",
     facebookUrl: "",
     pinterestUrl: "",
+    linkedinUrl: "",
+    tiktokUrl: "",
   });
 
   // Dedicated Footer Config State
@@ -406,6 +422,8 @@ export default function AdminSettingsPage() {
             youtubeUrl: data.youtubeUrl || "",
             facebookUrl: data.facebookUrl || "",
             pinterestUrl: data.pinterestUrl || "",
+            linkedinUrl: data.linkedinUrl || "",
+            tiktokUrl: data.tiktokUrl || "",
             logoUrl: data.logoUrl || "",
             faviconUrl: data.faviconUrl || "",
             adminLoginTitle: data.adminLoginTitle || "SavazAI WebApps Platform Admin",
@@ -420,6 +438,9 @@ export default function AdminSettingsPage() {
             qrGateAllowSkip: data.qrGateAllowSkip !== false,
           });
 
+          if (Array.isArray(data.customSocialLinks)) {
+            setCustomSocialLinks(data.customSocialLinks);
+          }
           if (data.footerConfig) {
             setFooterConfig((prev) => ({ ...prev, ...data.footerConfig }));
           }
@@ -633,6 +654,8 @@ export default function AdminSettingsPage() {
         YouTube: form.youtubeUrl?.trim() || "",
         Facebook: form.facebookUrl?.trim() || "",
         Pinterest: form.pinterestUrl?.trim() || "",
+        LinkedIn: form.linkedinUrl?.trim() || "",
+        TikTok: form.tiktokUrl?.trim() || "",
       };
 
       Object.entries(platformMap).forEach(([platform, url]) => {
@@ -661,6 +684,9 @@ export default function AdminSettingsPage() {
 
       const payload = {
         ...form,
+        customSocialLinks: customSocialLinks.filter(
+          (l) => l.label.trim() !== "" || l.url.trim() !== ""
+        ),
         footerConfig: updatedFooterConfig,
         emailConfig,
         aiConfig,
@@ -849,40 +875,22 @@ export default function AdminSettingsPage() {
                 <Settings className="w-3.5 h-3.5 mr-1" /> General
               </TabsTrigger>
               <TabsTrigger
-                value="branding"
+                value="personalization"
                 className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
               >
-                <Sliders className="w-3.5 h-3.5 mr-1" /> White-Labeling
+                <Palette className="w-3.5 h-3.5 mr-1" /> App Personalization
               </TabsTrigger>
               <TabsTrigger
-                value="qr-scan"
+                value="storage-vault"
                 className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
               >
-                <QrCode className="w-3.5 h-3.5 mr-1" /> QR Scan Gate
+                <HardDrive className="w-3.5 h-3.5 mr-1" /> Storage &amp; Media Vault
               </TabsTrigger>
               <TabsTrigger
-                value="watermark"
+                value="email-hub"
                 className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
               >
-                <Shield className="w-3.5 h-3.5 mr-1" /> Watermark
-              </TabsTrigger>
-              <TabsTrigger
-                value="storage"
-                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
-              >
-                <Cloud className="w-3.5 h-3.5 mr-1" /> R2 / S3
-              </TabsTrigger>
-              <TabsTrigger
-                value="google-workspace"
-                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
-              >
-                <Globe className="w-3.5 h-3.5 mr-1" /> Google Workspace
-              </TabsTrigger>
-              <TabsTrigger
-                value="nextcloud"
-                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
-              >
-                <Server className="w-3.5 h-3.5 mr-1" /> Nextcloud Storage
+                <Mail className="w-3.5 h-3.5 mr-1" /> E-Mail Configuration
               </TabsTrigger>
               <TabsTrigger
                 value="footer"
@@ -891,34 +899,16 @@ export default function AdminSettingsPage() {
                 <FileText className="w-3.5 h-3.5 mr-1" /> Footer
               </TabsTrigger>
               <TabsTrigger
-                value="email"
-                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
-              >
-                <Mail className="w-3.5 h-3.5 mr-1" /> Gmail / SMTP
-              </TabsTrigger>
-              <TabsTrigger
-                value="mail-config"
-                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
-              >
-                <Sliders className="w-3.5 h-3.5 mr-1" /> Mail Msg Config
-              </TabsTrigger>
-              <TabsTrigger
-                value="ai"
-                className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1" /> AI Engine
-              </TabsTrigger>
-              <TabsTrigger
                 value="socials"
                 className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
               >
                 <Share2 className="w-3.5 h-3.5 mr-1" /> Socials
               </TabsTrigger>
               <TabsTrigger
-                value="theme"
+                value="ai"
                 className="text-xs py-2 rounded-lg font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:border-slate-900 dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 dark:data-[state=active]:border-slate-100 shadow-2xs transition-all"
               >
-                <Palette className="w-3.5 h-3.5 mr-1" /> Theme Studio
+                <Sparkles className="w-3.5 h-3.5 mr-1" /> AI Engine
               </TabsTrigger>
             </TabsList>
 
@@ -1364,8 +1354,61 @@ export default function AdminSettingsPage() {
               </Card>
             </TabsContent>
 
-            {/* Tab: Admin Portal White-Labeling */}
-            <TabsContent value="branding">
+            {/* Tab: App Personalization Hub (White-Labeling, Theme Studio, QR Scan Gate, Watermark) */}
+            <TabsContent value="personalization" className="space-y-5">
+              {/* Sub-Navigation Bar */}
+              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-muted/60 border border-border/80">
+                <button
+                  type="button"
+                  onClick={() => setActivePersonalizationSubTab("branding")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activePersonalizationSubTab === "branding"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  1. White-Label Branding
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePersonalizationSubTab("theme")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activePersonalizationSubTab === "theme"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                  2. Theme Studio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePersonalizationSubTab("qr-scan")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activePersonalizationSubTab === "qr-scan"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  3. QR Scan Gate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePersonalizationSubTab("watermark")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activePersonalizationSubTab === "watermark"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  4. Watermark &amp; Anti-Harvesting
+                </button>
+              </div>
+
+              {activePersonalizationSubTab === "branding" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg flex items-center gap-2">
@@ -1597,10 +1640,10 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+              )}
 
-            {/* Tab: QR Scan Lead Intake Gate */}
-            <TabsContent value="qr-scan">
+              {/* Sub-Tab 3: QR Scan Lead Intake Gate */}
+              {activePersonalizationSubTab === "qr-scan" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -1867,10 +1910,10 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+              )}
 
-            {/* Tab 2: Watermark Vault */}
-            <TabsContent value="watermark">
+              {/* Sub-Tab 4: Watermark & Anti-Harvesting */}
+              {activePersonalizationSubTab === "watermark" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg">Selective Watermarking & Protection</CardTitle>
@@ -2003,10 +2046,64 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+              )}
             </TabsContent>
 
-            {/* Tab 3: R2 / S3 Storage */}
-            <TabsContent value="storage">
+            {/* Tab: Storage & Media Vault Hub (R2/S3, Google Workspace, Nextcloud, Manage Media Vault) */}
+            <TabsContent value="storage-vault" className="space-y-5">
+              {/* Sub-Navigation Bar */}
+              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-muted/60 border border-border/80">
+                <button
+                  type="button"
+                  onClick={() => setActiveStorageSubTab("r2-s3")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeStorageSubTab === "r2-s3"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Cloud className="w-3.5 h-3.5" />
+                  1. Cloudflare R2 / S3 Storage
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStorageSubTab("google-workspace")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeStorageSubTab === "google-workspace"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  2. Google Workspace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStorageSubTab("nextcloud")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeStorageSubTab === "nextcloud"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Server className="w-3.5 h-3.5" />
+                  3. Nextcloud Hub
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStorageSubTab("media-vault")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeStorageSubTab === "media-vault"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <HardDrive className="w-3.5 h-3.5" />
+                  4. Manage Media Vault
+                </button>
+              </div>
+
+              {activeStorageSubTab === "r2-s3" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg">Cloudflare R2 & S3 Object Storage</CardTitle>
@@ -2046,7 +2143,7 @@ export default function AdminSettingsPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setActiveTab("google-workspace")}
+                          onClick={() => setActiveStorageSubTab("google-workspace")}
                           className="text-xs font-semibold cursor-pointer"
                         >
                           Configure in Google Workspace Tab →
@@ -2070,7 +2167,7 @@ export default function AdminSettingsPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setActiveTab("nextcloud")}
+                          onClick={() => setActiveStorageSubTab("nextcloud")}
                           className="text-xs font-semibold cursor-pointer"
                         >
                           Configure in Nextcloud Storage Tab →
@@ -2228,10 +2325,10 @@ export default function AdminSettingsPage() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+              )}
 
-            {/* Tab: Google Workspace */}
-            <TabsContent value="google-workspace">
+              {/* Sub-Tab 2: Google Workspace */}
+              {activeStorageSubTab === "google-workspace" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg flex items-center justify-between">
@@ -2387,10 +2484,10 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+              )}
 
-            {/* Tab: Nextcloud Storage */}
-            <TabsContent value="nextcloud">
+              {/* Sub-Tab 3: Nextcloud Storage */}
+              {activeStorageSubTab === "nextcloud" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg flex items-center justify-between">
@@ -2519,6 +2616,12 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+              )}
+
+              {/* Sub-Tab 4: Manage Media Vault */}
+              {activeStorageSubTab === "media-vault" && (
+                <MediaVaultManager />
+              )}
             </TabsContent>
 
             {/* Tab 4: Dynamic Footer Configuration */}
@@ -2680,8 +2783,37 @@ export default function AdminSettingsPage() {
               </Card>
             </TabsContent>
 
-            {/* Tab 5: Email & Gmail SMTP Setup */}
-            <TabsContent value="email">
+            {/* Tab: E-Mail Configuration Hub (SMTP & Gmail Provider Settings + Mail Notification Templates) */}
+            <TabsContent value="email-hub" className="space-y-5">
+              {/* Sub-Navigation Bar */}
+              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-muted/60 border border-border/80">
+                <button
+                  type="button"
+                  onClick={() => setActiveEmailSubTab("smtp")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeEmailSubTab === "smtp"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  1. SMTP &amp; Gmail Provider Settings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveEmailSubTab("templates")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeEmailSubTab === "templates"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  2. Mail Notification Templates
+                </button>
+              </div>
+
+              {activeEmailSubTab === "smtp" && (
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg">Gmail & Outbound SMTP Dispatcher</CardTitle>
@@ -2929,11 +3061,12 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+              )}
 
-            {/* Tab: Mail Msg Config & Outbound Dispatch Audit */}
-            <TabsContent value="mail-config">
-              <MailConfigStudio />
+              {/* Sub-Tab 2: Mail Notification Templates */}
+              {activeEmailSubTab === "templates" && (
+                <MailConfigStudio />
+              )}
             </TabsContent>
 
             {/* Tab 6: Universal Multi-Provider AI Assistant */}
@@ -3098,15 +3231,18 @@ export default function AdminSettingsPage() {
             <TabsContent value="socials">
               <Card className="border border-border/80 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="font-serif text-lg">Social Media & Public Channels</CardTitle>
+                  <CardTitle className="font-serif text-lg">Social Media &amp; Public Channels</CardTitle>
                   <CardDescription className="text-xs">
-                    Link external public channels to display in headers, contact cards, and search graph metadata.
+                    Link external public channels (Instagram, YouTube, Facebook, Pinterest, LinkedIn, TikTok) and custom social/cultural platforms to display in headers, footers, contact cards, and search graph metadata.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 text-xs">
+                <CardContent className="space-y-6 text-xs">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="font-semibold text-foreground">Instagram Handle / URL</Label>
+                      <Label className="font-semibold text-foreground flex items-center gap-1.5">
+                        <SocialPlatformIcon icon="instagram" className="w-3.5 h-3.5 text-primary" />
+                        Instagram Handle / URL
+                      </Label>
                       <Input
                         value={form.instagramUrl}
                         onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
@@ -3116,7 +3252,10 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="font-semibold text-foreground">YouTube Channel URL</Label>
+                      <Label className="font-semibold text-foreground flex items-center gap-1.5">
+                        <SocialPlatformIcon icon="youtube" className="w-3.5 h-3.5 text-primary" />
+                        YouTube Channel URL
+                      </Label>
                       <Input
                         value={form.youtubeUrl}
                         onChange={(e) => setForm({ ...form, youtubeUrl: e.target.value })}
@@ -3128,7 +3267,10 @@ export default function AdminSettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="font-semibold text-foreground">Facebook Page URL</Label>
+                      <Label className="font-semibold text-foreground flex items-center gap-1.5">
+                        <SocialPlatformIcon icon="facebook" className="w-3.5 h-3.5 text-primary" />
+                        Facebook Page URL
+                      </Label>
                       <Input
                         value={form.facebookUrl}
                         onChange={(e) => setForm({ ...form, facebookUrl: e.target.value })}
@@ -3138,7 +3280,10 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="font-semibold text-foreground">Pinterest Portfolio URL</Label>
+                      <Label className="font-semibold text-foreground flex items-center gap-1.5">
+                        <SocialPlatformIcon icon="pinterest" className="w-3.5 h-3.5 text-primary" />
+                        Pinterest Portfolio URL
+                      </Label>
                       <Input
                         value={form.pinterestUrl}
                         onChange={(e) => setForm({ ...form, pinterestUrl: e.target.value })}
@@ -3147,12 +3292,161 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="font-semibold text-foreground flex items-center gap-1.5">
+                        <SocialPlatformIcon icon="linkedin" className="w-3.5 h-3.5 text-primary" />
+                        LinkedIn Profile / Company URL
+                      </Label>
+                      <Input
+                        value={form.linkedinUrl}
+                        onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
+                        placeholder="https://linkedin.com/in/savazar"
+                        className="text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="font-semibold text-foreground flex items-center gap-1.5">
+                        <SocialPlatformIcon icon="tiktok" className="w-3.5 h-3.5 text-primary" />
+                        TikTok Profile URL
+                      </Label>
+                      <Input
+                        value={form.tiktokUrl}
+                        onChange={(e) => setForm({ ...form, tiktokUrl: e.target.value })}
+                        placeholder="https://tiktok.com/@savazar"
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dynamic Custom Social Links */}
+                  <div className="pt-5 border-t border-border/80 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="font-serif font-semibold text-sm text-foreground">
+                          Custom Social &amp; Cultural Platform Links
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Add Threads, Bluesky, X/Twitter, Behance, ArtStation, WhatsApp, or custom cultural archives with selectable vector icons.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCustomSocialLinks([
+                            ...customSocialLinks,
+                            { label: "", url: "", icon: "globe" },
+                          ])
+                        }
+                        className="text-xs gap-1.5 shrink-0 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Custom Link
+                      </Button>
+                    </div>
+
+                    {customSocialLinks.length === 0 ? (
+                      <div className="p-4 rounded-lg border border-dashed border-border bg-muted/20 text-center text-muted-foreground text-xs">
+                        No custom social links configured yet. Click &ldquo;Add Custom Link&rdquo; to add additional platforms.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {customSocialLinks.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center p-3 rounded-lg border border-border bg-card/60"
+                          >
+                            <div className="sm:col-span-3">
+                              <Label className="text-[10px] font-mono uppercase text-muted-foreground mb-1 block">
+                                Icon
+                              </Label>
+                              <Select
+                                value={item.icon || "globe"}
+                                onValueChange={(val: CustomSocialLink["icon"]) => {
+                                  const next = [...customSocialLinks];
+                                  next[idx] = { ...next[idx], icon: val };
+                                  setCustomSocialLinks(next);
+                                }}
+                              >
+                                <SelectTrigger className="text-xs h-8">
+                                  <div className="flex items-center gap-2">
+                                    <SocialPlatformIcon icon={item.icon || "globe"} className="w-3.5 h-3.5 text-primary" />
+                                    <SelectValue placeholder="Icon" />
+                                  </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CUSTOM_SOCIAL_ICON_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                                      <span className="inline-flex items-center gap-2">
+                                        <SocialPlatformIcon icon={opt.value} className="w-3.5 h-3.5" />
+                                        {opt.label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="sm:col-span-3">
+                              <Label className="text-[10px] font-mono uppercase text-muted-foreground mb-1 block">
+                                Platform Label
+                              </Label>
+                              <Input
+                                value={item.label}
+                                onChange={(e) => {
+                                  const next = [...customSocialLinks];
+                                  next[idx] = { ...next[idx], label: e.target.value };
+                                  setCustomSocialLinks(next);
+                                }}
+                                placeholder="e.g. Behance, Threads"
+                                className="text-xs h-8"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-5">
+                              <Label className="text-[10px] font-mono uppercase text-muted-foreground mb-1 block">
+                                Destination URL
+                              </Label>
+                              <Input
+                                value={item.url}
+                                onChange={(e) => {
+                                  const next = [...customSocialLinks];
+                                  next[idx] = { ...next[idx], url: e.target.value };
+                                  setCustomSocialLinks(next);
+                                }}
+                                placeholder="https://..."
+                                className="text-xs font-mono h-8"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-1 flex justify-end pt-4 sm:pt-4">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  setCustomSocialLinks(customSocialLinks.filter((_, i) => i !== idx))
+                                }
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10 cursor-pointer"
+                                title="Remove custom link"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Tab 9: Theme & Design Studio */}
-            <TabsContent value="theme">
+            {/* Sub-Tab 2 of App Personalization: Theme & Design Studio */}
+            {activeTab === "personalization" && activePersonalizationSubTab === "theme" && (
               <Card className="border-border/80 shadow-sm">
                 <CardHeader className="border-b border-border/50 pb-4">
                   <div className="flex items-center justify-between flex-wrap gap-3">
@@ -4046,7 +4340,7 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            )}
           </Tabs>
         </form>
       )}

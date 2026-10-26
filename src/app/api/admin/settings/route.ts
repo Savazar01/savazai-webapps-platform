@@ -147,6 +147,9 @@ export async function PUT(request: NextRequest) {
       youtubeUrl: body.youtubeUrl,
       facebookUrl: body.facebookUrl,
       pinterestUrl: body.pinterestUrl,
+      linkedinUrl: body.linkedinUrl !== undefined ? (body.linkedinUrl ? String(body.linkedinUrl).trim() : null) : undefined,
+      tiktokUrl: body.tiktokUrl !== undefined ? (body.tiktokUrl ? String(body.tiktokUrl).trim() : null) : undefined,
+      customSocialLinks: body.customSocialLinks !== undefined ? body.customSocialLinks : undefined,
       logoUrl: body.logoUrl,
       faviconUrl: body.faviconUrl,
       copyrightNoticeHeader:

@@ -44,6 +44,7 @@ import {
   History,
   Images,
   Grid,
+  Code,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -52,6 +53,9 @@ import { ViewportSwitcher, ViewportMode } from "@/components/builder/viewport-sw
 import { StyleInspector, SectionStyle } from "@/components/builder/style-inspector";
 import { TiptapEditor } from "@/components/builder/tiptap-editor";
 import { ColumnBlock } from "@/components/public/tiptap-renderer";
+import { VideoBlock } from "@/components/public/builder/video-block";
+import { EmbedBlock, type EmbedAspectRatio, type EmbedSandboxMode } from "@/components/public/builder/embed-block";
+import { parseVideoEmbedUrl } from "@/lib/video-embed-parser";
 import { getPatternById } from "@/lib/background-patterns";
 import { PdfViewerBlock } from "@/components/public/blocks/pdf-viewer-block";
 import { TimelineBlock, TimelineMilestone } from "@/components/public/blocks/timeline-block";
@@ -438,6 +442,14 @@ function SortableSection({
                 ragaName: "Sri Ragam",
               },
             ],
+          }
+        : {}),
+      ...(type === "EMBED_HTML"
+        ? {
+            embedHtml: "",
+            embedCaption: "",
+            embedAspectRatio: "16:9" as const,
+            embedSandboxMode: "sandboxed" as const,
           }
         : {}),
     };
@@ -1291,19 +1303,131 @@ function SortableSection({
                       )}
 
                       {block.type === "VIDEO" && (
-                        <div className="space-y-1.5">
-                          <div className="p-2 rounded bg-primary/5 border border-primary/20 flex items-center gap-2">
-                            <Video className="w-4 h-4 text-primary shrink-0" />
+                        <div className="space-y-2.5 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <span className="text-[11px] font-bold text-primary flex items-center gap-1.5">
+                              <Video className="w-3.5 h-3.5 text-primary shrink-0" />
+                              Universal Video Player (YouTube, Vimeo, Facebook, Instagram, MP4)
+                            </span>
+                            {block.videoUrl && (() => {
+                              const parsed = parseVideoEmbedUrl(block.videoUrl);
+                              return parsed ? (
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                  Embed Ready ({parsed.provider.toUpperCase()})
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <input
                               type="text"
-                              placeholder="Video URL (YouTube/Vimeo/MP4)"
+                              placeholder="Paste watch/post URL (YouTube, Vimeo, FB, IG, or .mp4)"
                               value={block.videoUrl || ""}
                               onChange={(e) =>
                                 updateBlock(colIdx, block.id, { videoUrl: e.target.value })
                               }
-                              className="w-full text-xs p-1 rounded border border-border bg-background text-foreground font-mono"
+                              className="sm:col-span-2 w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-mono"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Optional Video Caption"
+                              value={block.mediaAlt || ""}
+                              onChange={(e) =>
+                                updateBlock(colIdx, block.id, { mediaAlt: e.target.value })
+                              }
+                              className="w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-serif"
                             />
                           </div>
+
+                          {block.videoUrl && (
+                            <div className="pt-1">
+                              <VideoBlock
+                                videoUrl={block.videoUrl}
+                                caption={block.mediaAlt}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {block.type === "EMBED_HTML" && (
+                        <div className="space-y-2.5 p-3 rounded-xl border border-primary/40 bg-card shadow-xs">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                              <Code className="w-4 h-4 text-primary" /> Embed Code / Source HTML Widget
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground font-mono">Aspect:</span>
+                                <select
+                                  value={block.embedAspectRatio || "16:9"}
+                                  onChange={(e) =>
+                                    updateBlock(colIdx, block.id, {
+                                      embedAspectRatio: e.target.value as EmbedAspectRatio,
+                                    })
+                                  }
+                                  className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                >
+                                  <option value="16:9">Responsive 16:9</option>
+                                  <option value="4:3">Responsive 4:3</option>
+                                  <option value="1:1">Square 1:1</option>
+                                  <option value="auto">Natural / Unconstrained</option>
+                                </select>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground font-mono">Security:</span>
+                                <select
+                                  value={block.embedSandboxMode || "sandboxed"}
+                                  onChange={(e) =>
+                                    updateBlock(colIdx, block.id, {
+                                      embedSandboxMode: e.target.value as EmbedSandboxMode,
+                                    })
+                                  }
+                                  className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                >
+                                  <option value="sandboxed">Standard Iframe Sandbox</option>
+                                  <option value="unconstrained">Unconstrained Trusted Embed</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <textarea
+                            rows={4}
+                            placeholder='Paste third-party HTML/embed snippet (<iframe src="...">, Spotify, SoundCloud, Instagram/TikTok scripts, Calendly, Google Maps, or Stripe/Razorpay checkout buttons)...'
+                            value={block.embedHtml || ""}
+                            onChange={(e) =>
+                              updateBlock(colIdx, block.id, { embedHtml: e.target.value })
+                            }
+                            className="w-full text-xs p-2 rounded-lg border border-border bg-slate-950 text-emerald-300 font-mono leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+
+                          <input
+                            type="text"
+                            placeholder="Optional Caption / Attribution"
+                            value={block.embedCaption || ""}
+                            onChange={(e) =>
+                              updateBlock(colIdx, block.id, { embedCaption: e.target.value })
+                            }
+                            className="w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-serif"
+                          />
+
+                          {block.embedHtml ? (
+                            <div className="pt-2 border-t border-border/40">
+                              <EmbedBlock
+                                embedHtml={block.embedHtml}
+                                caption={block.embedCaption}
+                                aspectRatio={block.embedAspectRatio || "16:9"}
+                                sandboxMode={block.embedSandboxMode || "sandboxed"}
+                              />
+                            </div>
+                          ) : (
+                            <div className="p-3 rounded border border-dashed border-border/80 text-center text-[11px] text-muted-foreground">
+                              Paste an &lt;iframe&gt; or third-party widget snippet above to render a live preview.
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1673,12 +1797,8 @@ function SortableSection({
 
                     if (media.mediaType === "VIDEO" && media.videoUrl) {
                       return (
-                        <div className="mb-2 p-2.5 rounded border border-primary/30 bg-primary/5 flex items-center gap-2">
-                          <Video className="w-4 h-4 text-primary shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[10px] font-bold uppercase text-primary block">Video</span>
-                            <p className="text-[11px] text-foreground truncate font-mono">{String(media.videoUrl)}</p>
-                          </div>
+                        <div className="mb-2">
+                          <VideoBlock videoUrl={String(media.videoUrl)} />
                         </div>
                       );
                     }
@@ -1813,6 +1933,20 @@ function SortableSection({
                   }`}
                 >
                   + Button
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addBlockToCol(colIdx, "EMBED_HTML");
+                  }}
+                  className={`px-1.5 py-0.5 text-[9px] rounded border transition-all cursor-pointer font-semibold flex items-center gap-1 ${
+                    isSectionLight
+                      ? "border-slate-300 bg-white hover:bg-slate-100 text-slate-800 shadow-2xs"
+                      : "border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100 shadow-2xs"
+                  }`}
+                >
+                  <Code className="w-2.5 h-2.5 text-slate-500 dark:text-slate-400" /> + Embed / HTML
                 </button>
                 <button
                   type="button"

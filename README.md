@@ -261,6 +261,13 @@ SavazAI WebApps Platform
 - **Edge Anti-Bounce Protocol (`src/proxy.ts`)**: Eradicated blind edge redirects from `/admin/login` to `/admin`. Edge middleware unconditionally wipes stale session cookies on unauthenticated requests and 401 responses, preventing CPU-pegging redirect loops.
 - **Mount-Only Dashboard Life Cycle**: Strict empty dependency arrays on administrative layout effects, preventing cascading fetch storms.
 
+#### 14. Media Vault Asset Manager, Artwork Materials/Surface Split & Universal Embed Engine
+- **Artwork Materials & Surface Schema Split**: Split legacy `medium` into **Materials Used** (`materials`) and **Surface / Support** (`surface`) across Prisma, Admin Artwork dialogs, Public Artwork pages, e-Catalog plates, and physical gallery placards with zero-data-loss backfill.
+- **Consolidated System Admin Hubs**: Unified settings into **Storage & Media Vault** (Cloudflare R2/S3, Google Workspace, Nextcloud Hub, Manage Media Vault), **E-Mail Configuration** (SMTP/Gmail + Mail Notification Templates), and **App Personalization** (White-Label Branding, Theme Studio, QR Scan Gate, Watermark & Anti-Harvesting).
+- **Manage Media Vault & Dependency Matrix (`/api/admin/media/vault`)**: Table/Grid asset manager displaying dimensions, file size, MIME type, and a real-time **Where Used** dependency matrix across Artworks, Catalogs, Categories, Pages, Events, Blogs, and Settings, with orphan filtering and permanent batch cleanup.
+- **Expanded Social Channels & Custom Link Builder**: Built-in support for Instagram, YouTube, Facebook, Pinterest, LinkedIn, and TikTok, plus dynamic custom social links with selectable vector icons.
+- **Universal Video Embed Transformer (`src/lib/video-embed-parser.ts`) & HTML Embed Block (`EMBED_HTML`)**: Automatically transforms raw YouTube (`watch?v=`, `youtu.be/`, `shorts/`), Vimeo, Facebook, and Instagram URLs into CSP-safe embed players or HTML5 `<video>`, alongside a new **`+ Embed / HTML`** Page Builder block with configurable aspect ratios (`16:9`, `4:3`, `1:1`, `auto`) and sandbox security toggles.
+
 ---
 
 ## 5. Quickstart & Local Development

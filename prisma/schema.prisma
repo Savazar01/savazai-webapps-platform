@@ -143,6 +143,9 @@ model SystemSetting {
   youtubeUrl        String?
   facebookUrl       String?
   pinterestUrl      String?
+  linkedinUrl       String?
+  tiktokUrl         String?
+  customSocialLinks Json?    // [{ label: string, url: string, icon: string }]
   // Branding
   logoUrl           String?
   faviconUrl        String?
@@ -329,7 +332,9 @@ model Artwork {
   description        String               @db.Text
   categoryId         String               @db.Uuid
   dimensions         String               // e.g. "36 x 48 inches"
-  medium             String               // e.g. "22k Gold Foil, Teakwood, Semi-Precious Gemstones"
+  medium             String               // Legacy field preserved for backward compatibility
+  materials          String?              // e.g. "Natural pigments, shell gold, semi-precious stones"
+  surface            String?              // e.g. "Wasli paper, teakwood plank, silk, khadi cloth"
   yearCreated        Int
   hasGoldFoil        Boolean              @default(false)
   goldPurity         String?              // e.g. "22 Carat Jaipur Gold Leaf"
