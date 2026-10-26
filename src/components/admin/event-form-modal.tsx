@@ -26,6 +26,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { UniversalMediaDialog } from "@/components/admin/universal-media-dialog";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -396,9 +397,10 @@ function EventFormContent({
 
   // Upload Hero Banner
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingBanner(true);
     const body = new FormData();
     body.append("file", file);
@@ -429,7 +431,7 @@ function EventFormContent({
 
     try {
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        const file = await optimizeImageForWebpUpload(files[i]);
         const body = new FormData();
         body.append("file", file);
         body.append("watermark", "false");

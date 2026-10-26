@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import { AiAssistantModal } from "@/components/admin/ai-assistant-modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EditablePageHeader } from "@/components/admin/editable-page-header";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 
 
 interface BlogPostItem {
@@ -189,9 +190,10 @@ export default function AdminPostsPage() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingImage(true);
     const body = new FormData();
     body.append("file", file);
@@ -224,9 +226,10 @@ export default function AdminPostsPage() {
   };
 
   const handleInlineImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingImage(true);
     const body = new FormData();
     body.append("file", file);

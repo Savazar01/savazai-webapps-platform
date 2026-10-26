@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DynamicThemeProvider } from "@/components/dynamic-theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { VisitorTelemetryTracker } from "@/lib/analytics-tracker";
 import prisma from "@/lib/prisma";
 import { getServerBaseUrl } from "@/lib/get-base-url";
 import "./globals.css";
@@ -72,6 +73,7 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300"
       >
         <ThemeProvider>
+          <VisitorTelemetryTracker />
           {children}
           <Toaster position="top-right" richColors />
         </ThemeProvider>

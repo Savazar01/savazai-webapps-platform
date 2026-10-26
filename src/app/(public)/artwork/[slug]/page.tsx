@@ -8,6 +8,7 @@ import { Footer } from "@/components/public/footer";
 import { ArtCanvasViewer } from "@/components/public/art-canvas-viewer";
 import { ExhibitionQrModal } from "@/components/public/exhibition-qr-modal";
 import { TiptapRenderer } from "@/components/public/tiptap-renderer";
+import { SocialShareBar } from "@/components/public/social-share-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/formatters";
@@ -92,6 +93,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
       qrGatePromptText: true,
       qrGateButtonLabel: true,
       qrGateAllowSkip: true,
+      enableSocialShare: true,
     },
   });
   const watermarkConfig = (settings?.watermarkConfig as Record<string, unknown>) || {};
@@ -339,13 +341,24 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             </div>
 
             {/* Action Button: Acquisition Inquiries */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-4">
               <Link href="/commission" className="block w-full">
                 <Button variant="gold" className="w-full font-serif font-bold gap-2 cursor-pointer h-11 text-sm shadow-md">
                   <Sparkles className="w-4 h-4" />
                   Inquire for Acquisition
                 </Button>
               </Link>
+
+              {settings?.enableSocialShare !== false && (
+                <SocialShareBar
+                  title={artwork.title}
+                  description={`${artwork.category.name} (${artwork.yearCreated}) • ${artwork.materials || artwork.medium}${artwork.surface ? ` on ${artwork.surface}` : ""}`}
+                  url={`/artwork/${artwork.slug}`}
+                  mediaUrl={artwork.watermarkedWebpUrl}
+                  entityLabel="Masterwork"
+                  enabled={true}
+                />
+              )}
             </div>
           </div>
         </div>

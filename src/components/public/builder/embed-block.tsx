@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef } from "react";
-import { parseVideoEmbedUrl } from "@/lib/video-embed-parser";
+import {
+  parseVideoEmbedUrl,
+  type MediaAspectRatio,
+  type MediaAlign,
+  type MediaBackdropMode,
+} from "@/lib/video-embed-parser";
 
-export type EmbedAspectRatio = "16:9" | "4:3" | "1:1" | "auto";
+export type EmbedAspectRatio = MediaAspectRatio;
 export type EmbedSandboxMode = "sandboxed" | "unconstrained";
 
 export interface EmbedBlockProps {
@@ -11,7 +16,9 @@ export interface EmbedBlockProps {
   caption?: string;
   aspectRatio?: EmbedAspectRatio;
   sandboxMode?: EmbedSandboxMode;
-  align?: "left" | "center" | "right";
+  align?: MediaAlign;
+  backdropMode?: MediaBackdropMode;
+  backdropColor?: string;
   width?: "25%" | "33%" | "50%" | "66%" | "75%" | "100%";
   borderClass?: string;
   className?: string;
@@ -51,6 +58,8 @@ export function EmbedBlock({
   aspectRatio = "auto",
   sandboxMode = "sandboxed",
   align = "center",
+  backdropMode = "transparent",
+  backdropColor = "#0D0E12",
   width = "100%",
   borderClass = "border border-border/60 shadow-sm",
   className = "",
@@ -90,6 +99,13 @@ export function EmbedBlock({
       ? "ml-auto"
       : "mx-auto";
 
+  const flexJustifyClass =
+    align === "left"
+      ? "justify-start"
+      : align === "right"
+      ? "justify-end"
+      : "justify-center";
+
   const widthClass =
     width === "25%"
       ? "w-full md:w-1/4"
@@ -105,12 +121,16 @@ export function EmbedBlock({
 
   const aspectClass =
     aspectRatio === "16:9"
-      ? "aspect-video"
+      ? "aspect-video w-full"
+      : aspectRatio === "9:16"
+      ? "aspect-[9/16] w-full max-w-[380px]"
+      : aspectRatio === "4:5"
+      ? "aspect-[4/5] w-full max-w-[440px]"
       : aspectRatio === "4:3"
-      ? "aspect-[4/3]"
+      ? "aspect-[4/3] w-full"
       : aspectRatio === "1:1"
-      ? "aspect-square"
-      : "min-h-[120px]";
+      ? "aspect-square w-full max-w-[540px]"
+      : "w-full min-h-[120px]";
 
   const srcDocHtml = `<!DOCTYPE html>
 <html>
@@ -128,36 +148,73 @@ export function EmbedBlock({
 </body>
 </html>`;
 
+  const hasStageBackdrop =
+    backdropMode === "solid" || backdropMode === "blurred";
+
   return (
     <figure className={`${widthClass} ${alignClass} ${className}`}>
       <div
-        className={`relative w-full overflow-hidden rounded-lg bg-card/40 ${borderClass} ${aspectClass}`}
+        className={`relative w-full overflow-hidden rounded-xl flex items-center ${flexJustifyClass} ${
+          hasStageBackdrop ? `p-3 sm:p-5 ${borderClass}` : ""
+        }`}
+        style={
+          backdropMode === "solid"
+            ? { backgroundColor: backdropColor || "#0D0E12" }
+            : backdropMode === "blurred"
+            ? { backgroundColor: "#0D0E12" }
+            : undefined
+        }
       >
-        {sandboxMode === "sandboxed" ? (
-          <iframe
-            srcDoc={srcDocHtml}
-            title={caption || "Embedded third-party widget"}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen; payment"
-            allowFullScreen
-            className={`w-full border-0 ${
-              aspectRatio === "auto" ? "min-h-[380px] h-full" : "h-full"
-            }`}
-          />
-        ) : (
+        {backdropMode === "blurred" && (
           <div
-            ref={containerRef}
-            className={`w-full ${
-              aspectRatio === "auto"
-                ? "[&_iframe]:w-full [&_iframe]:min-h-[360px] [&_iframe]:border-0"
-                : "h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
-            }`}
+            className="absolute inset-0 pointer-events-none overflow-hidden opacity-45 blur-2xl scale-110"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 50%, rgba(212,175,55,0.45), rgba(163,40,30,0.35), rgba(13,14,18,0.95))",
+            }}
           />
         )}
+
+        <div
+          className={`relative z-10 overflow-hidden rounded-lg bg-card/40 ${
+            hasStageBackdrop ? "shadow-xl" : borderClass
+          } ${aspectClass}`}
+        >
+          {sandboxMode === "sandboxed" ? (
+            <iframe
+              srcDoc={srcDocHtml}
+              title={caption || "Embedded third-party widget"}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen; payment"
+              allowFullScreen
+              className={`w-full border-0 ${
+                aspectRatio === "auto" ? "min-h-[380px] h-full" : "h-full"
+              }`}
+            />
+          ) : (
+            <div
+              ref={containerRef}
+              className={`w-full ${
+                aspectRatio === "auto"
+                  ? "[&_iframe]:w-full [&_iframe]:min-h-[360px] [&_iframe]:border-0"
+                  : "h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
+              }`}
+            />
+          )}
+        </div>
       </div>
+
       {caption && (
-        <figcaption className="mt-2.5 text-center font-serif italic text-xs text-muted-foreground">
+        <figcaption
+          className={`mt-2.5 font-serif italic text-xs text-muted-foreground ${
+            align === "left"
+              ? "text-left"
+              : align === "right"
+              ? "text-right"
+              : "text-center"
+          }`}
+        >
           {caption}
         </figcaption>
       )}

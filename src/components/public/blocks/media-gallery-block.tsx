@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Sparkles, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProtectedImage } from "@/components/public/protected-image";
+import { SocialShareBar } from "@/components/public/social-share-bar";
 import dynamic from "next/dynamic";
 
 const KenBurnsCanvas = dynamic(
@@ -301,20 +302,30 @@ export function ArtworkPlacard({
             </p>
           )}
         </div>
-        {href && (
-          <Link
-            href={href}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-serif font-semibold shrink-0 transition-colors cursor-pointer",
-              alwaysLight
-                ? "bg-stone-900 text-white hover:bg-stone-800 shadow-xs"
-                : "bg-primary hover:bg-primary/90 text-primary-foreground"
-            )}
-          >
-            <span>View Work</span>
-            <ExternalLink className="w-3 h-3" />
-          </Link>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <SocialShareBar
+            title={item.title || "Curated Masterwork"}
+            description={schoolMedium || item.description || item.caption}
+            url={href || undefined}
+            mediaUrl={item.url}
+            entityLabel="Gallery Plate"
+            variant="minimal"
+          />
+          {href && (
+            <Link
+              href={href}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-serif font-semibold shrink-0 transition-colors cursor-pointer",
+                alwaysLight
+                  ? "bg-stone-900 text-white hover:bg-stone-800 shadow-xs"
+                  : "bg-primary hover:bg-primary/90 text-primary-foreground"
+              )}
+            >
+              <span>View Work</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

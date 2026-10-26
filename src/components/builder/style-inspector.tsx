@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { BACKGROUND_PATTERNS } from "@/lib/background-patterns";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 
 export interface SectionStyle {
   // Section Headings & Curatorial Meta
@@ -146,9 +147,10 @@ export function StyleInspector({
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingImage(true);
     const body = new FormData();
     body.append("file", file);
@@ -176,9 +178,10 @@ export function StyleInspector({
   };
 
   const handleBgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingBgImage(true);
     const body = new FormData();
     body.append("file", file);

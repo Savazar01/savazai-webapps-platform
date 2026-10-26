@@ -55,7 +55,15 @@ import { TiptapEditor } from "@/components/builder/tiptap-editor";
 import { ColumnBlock } from "@/components/public/tiptap-renderer";
 import { VideoBlock } from "@/components/public/builder/video-block";
 import { EmbedBlock, type EmbedAspectRatio, type EmbedSandboxMode } from "@/components/public/builder/embed-block";
-import { parseVideoEmbedUrl } from "@/lib/video-embed-parser";
+import {
+  parseVideoEmbedUrl,
+  extractEmbedParameters,
+  applyEmbedParameters,
+  type MediaAspectRatio,
+  type MediaAlign,
+  type MediaBackdropMode,
+} from "@/lib/video-embed-parser";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 import { getPatternById } from "@/lib/background-patterns";
 import { PdfViewerBlock } from "@/components/public/blocks/pdf-viewer-block";
 import { TimelineBlock, TimelineMilestone } from "@/components/public/blocks/timeline-block";
@@ -129,6 +137,7 @@ interface PageData {
   slug: string;
   metaDescription?: string;
   isPublished: boolean;
+  allowShare?: boolean | null;
   config?: Record<string, unknown> | null;
   sections: SectionData[];
 }
@@ -492,8 +501,9 @@ function SortableSection({
   const handleBlockImageUpload = async (
     colIdx: number,
     blockId: string,
-    file: File
+    rawFile: File
   ) => {
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingBlockId(blockId);
     const body = new FormData();
     body.append("file", file);
@@ -1302,134 +1312,346 @@ function SortableSection({
                         </div>
                       )}
 
-                      {block.type === "VIDEO" && (
-                        <div className="space-y-2.5 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                            <span className="text-[11px] font-bold text-primary flex items-center gap-1.5">
-                              <Video className="w-3.5 h-3.5 text-primary shrink-0" />
-                              Universal Video Player (YouTube, Vimeo, Facebook, Instagram, MP4)
-                            </span>
-                            {block.videoUrl && (() => {
-                              const parsed = parseVideoEmbedUrl(block.videoUrl);
-                              return parsed ? (
-                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                                  Embed Ready ({parsed.provider.toUpperCase()})
-                                </span>
-                              ) : null;
-                            })()}
-                          </div>
+                      {block.type === "VIDEO" && (() => {
+                        const vParams = extractEmbedParameters(block.videoUrl);
+                        return (
+                          <div className="space-y-2.5 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                              <span className="text-[11px] font-bold text-primary flex items-center gap-1.5">
+                                <Video className="w-3.5 h-3.5 text-primary shrink-0" />
+                                Universal Video Player (YouTube, Shorts, Reels, TikTok, Vimeo, MP4)
+                              </span>
+                              {block.videoUrl && (() => {
+                                const parsed = parseVideoEmbedUrl(block.videoUrl);
+                                return parsed ? (
+                                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                    Embed Ready ({parsed.provider.toUpperCase()})
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Paste watch/post URL (YouTube, Vimeo, FB, IG, or .mp4)"
-                              value={block.videoUrl || ""}
-                              onChange={(e) =>
-                                updateBlock(colIdx, block.id, { videoUrl: e.target.value })
-                              }
-                              className="sm:col-span-2 w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-mono"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Optional Video Caption"
-                              value={block.mediaAlt || ""}
-                              onChange={(e) =>
-                                updateBlock(colIdx, block.id, { mediaAlt: e.target.value })
-                              }
-                              className="w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-serif"
-                            />
-                          </div>
-
-                          {block.videoUrl && (
-                            <div className="pt-1">
-                              <VideoBlock
-                                videoUrl={block.videoUrl}
-                                caption={block.mediaAlt}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <input
+                                type="text"
+                                placeholder="Paste watch/post URL (YouTube, Shorts, Reels, TikTok, Vimeo, FB, IG, or .mp4)"
+                                value={block.videoUrl || ""}
+                                onChange={(e) =>
+                                  updateBlock(colIdx, block.id, { videoUrl: e.target.value })
+                                }
+                                className="sm:col-span-2 w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-mono"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Optional Video Caption"
+                                value={block.mediaAlt || ""}
+                                onChange={(e) =>
+                                  updateBlock(colIdx, block.id, { mediaAlt: e.target.value })
+                                }
+                                className="w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-serif"
                               />
                             </div>
-                          )}
-                        </div>
-                      )}
 
-                      {block.type === "EMBED_HTML" && (
-                        <div className="space-y-2.5 p-3 rounded-xl border border-primary/40 bg-card shadow-xs">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-xs font-bold text-primary flex items-center gap-1.5">
-                              <Code className="w-4 h-4 text-primary" /> Embed Code / Source HTML Widget
-                            </span>
-                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                            {/* Aspect Ratio, Alignment & Letterbox Background Controls */}
+                            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                               <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-muted-foreground font-mono">Aspect:</span>
                                 <select
-                                  value={block.embedAspectRatio || "16:9"}
+                                  value={block.videoAspectRatio || "16:9"}
                                   onChange={(e) =>
                                     updateBlock(colIdx, block.id, {
-                                      embedAspectRatio: e.target.value as EmbedAspectRatio,
+                                      videoAspectRatio: e.target.value as MediaAspectRatio,
                                     })
                                   }
                                   className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
                                 >
-                                  <option value="16:9">Responsive 16:9</option>
-                                  <option value="4:3">Responsive 4:3</option>
-                                  <option value="1:1">Square 1:1</option>
-                                  <option value="auto">Natural / Unconstrained</option>
+                                  <option value="16:9">16:9 (Widescreen)</option>
+                                  <option value="9:16">9:16 (Shorts / Reels / TikTok)</option>
+                                  <option value="1:1">1:1 (Square Social Feed)</option>
+                                  <option value="4:5">4:5 (Instagram Portrait)</option>
+                                  <option value="4:3">4:3 (Classic TV)</option>
+                                  <option value="auto">Auto / Unconstrained</option>
                                 </select>
                               </div>
 
                               <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-muted-foreground font-mono">Security:</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">Align:</span>
                                 <select
-                                  value={block.embedSandboxMode || "sandboxed"}
+                                  value={block.videoAlign || "center"}
                                   onChange={(e) =>
                                     updateBlock(colIdx, block.id, {
-                                      embedSandboxMode: e.target.value as EmbedSandboxMode,
+                                      videoAlign: e.target.value as MediaAlign,
                                     })
                                   }
                                   className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
                                 >
-                                  <option value="sandboxed">Standard Iframe Sandbox</option>
-                                  <option value="unconstrained">Unconstrained Trusted Embed</option>
+                                  <option value="left">Left</option>
+                                  <option value="center">Center</option>
+                                  <option value="right">Right</option>
                                 </select>
                               </div>
+
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground font-mono">Letterbox Filler:</span>
+                                <select
+                                  value={block.videoBackdropMode || "transparent"}
+                                  onChange={(e) =>
+                                    updateBlock(colIdx, block.id, {
+                                      videoBackdropMode: e.target.value as MediaBackdropMode,
+                                    })
+                                  }
+                                  className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                >
+                                  <option value="transparent">Transparent</option>
+                                  <option value="blurred">Blurred Video Backdrop</option>
+                                  <option value="solid">Solid Color Stage</option>
+                                </select>
+                              </div>
+
+                              {block.videoBackdropMode === "solid" && (
+                                <input
+                                  type="color"
+                                  value={block.videoBackdropColor || "#0D0E12"}
+                                  onChange={(e) =>
+                                    updateBlock(colIdx, block.id, {
+                                      videoBackdropColor: e.target.value,
+                                    })
+                                  }
+                                  title="Letterbox Stage Color"
+                                  className="w-6 h-6 rounded border border-border cursor-pointer"
+                                />
+                              )}
                             </div>
+
+                            {/* Visual Parameter Inspector */}
+                            {block.videoUrl && (
+                              <div className="p-2 rounded-lg border border-border/60 bg-background/70 space-y-1.5">
+                                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">
+                                  Visual Parameter Inspector (Auto-updates URL flags)
+                                </span>
+                                <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                                  {(
+                                    [
+                                      { key: "autoplay", label: "Autoplay" },
+                                      { key: "loop", label: "Loop" },
+                                      { key: "mute", label: "Mute" },
+                                      { key: "controls", label: "Player Controls" },
+                                      { key: "modestBranding", label: "Modest Branding" },
+                                      { key: "captions", label: "Show Captions" },
+                                    ] as const
+                                  ).map((item) => (
+                                    <label
+                                      key={item.key}
+                                      className="inline-flex items-center gap-1.5 cursor-pointer text-foreground select-none"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={vParams[item.key]}
+                                        onChange={(e) => {
+                                          const updatedUrl = applyEmbedParameters(block.videoUrl, {
+                                            [item.key]: e.target.checked,
+                                          });
+                                          updateBlock(colIdx, block.id, { videoUrl: updatedUrl });
+                                        }}
+                                        className="rounded border-border"
+                                      />
+                                      {item.label}
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {block.videoUrl && (
+                              <div className="pt-1">
+                                <VideoBlock
+                                  videoUrl={block.videoUrl}
+                                  caption={block.mediaAlt}
+                                  aspectRatio={block.videoAspectRatio}
+                                  align={block.videoAlign}
+                                  backdropMode={block.videoBackdropMode}
+                                  backdropColor={block.videoBackdropColor}
+                                />
+                              </div>
+                            )}
                           </div>
+                        );
+                      })()}
 
-                          <textarea
-                            rows={4}
-                            placeholder='Paste third-party HTML/embed snippet (<iframe src="...">, Spotify, SoundCloud, Instagram/TikTok scripts, Calendly, Google Maps, or Stripe/Razorpay checkout buttons)...'
-                            value={block.embedHtml || ""}
-                            onChange={(e) =>
-                              updateBlock(colIdx, block.id, { embedHtml: e.target.value })
-                            }
-                            className="w-full text-xs p-2 rounded-lg border border-border bg-slate-950 text-emerald-300 font-mono leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
+                      {block.type === "EMBED_HTML" && (() => {
+                        const eParams = extractEmbedParameters(block.embedHtml);
+                        return (
+                          <div className="space-y-2.5 p-3 rounded-xl border border-primary/40 bg-card shadow-xs">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                                <Code className="w-4 h-4 text-primary" /> Embed Code / Source HTML Widget Studio
+                              </span>
+                              <div className="flex flex-wrap items-center gap-2 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-muted-foreground font-mono">Aspect:</span>
+                                  <select
+                                    value={block.embedAspectRatio || "16:9"}
+                                    onChange={(e) =>
+                                      updateBlock(colIdx, block.id, {
+                                        embedAspectRatio: e.target.value as EmbedAspectRatio,
+                                      })
+                                    }
+                                    className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                  >
+                                    <option value="16:9">16:9 (Widescreen)</option>
+                                    <option value="9:16">9:16 (Shorts / Reels / TikTok)</option>
+                                    <option value="1:1">1:1 (Square Social Feed)</option>
+                                    <option value="4:5">4:5 (Instagram Portrait)</option>
+                                    <option value="4:3">4:3 (Classic TV)</option>
+                                    <option value="auto">Natural / Unconstrained</option>
+                                  </select>
+                                </div>
 
-                          <input
-                            type="text"
-                            placeholder="Optional Caption / Attribution"
-                            value={block.embedCaption || ""}
-                            onChange={(e) =>
-                              updateBlock(colIdx, block.id, { embedCaption: e.target.value })
-                            }
-                            className="w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-serif"
-                          />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-muted-foreground font-mono">Align:</span>
+                                  <select
+                                    value={block.embedAlign || "center"}
+                                    onChange={(e) =>
+                                      updateBlock(colIdx, block.id, {
+                                        embedAlign: e.target.value as MediaAlign,
+                                      })
+                                    }
+                                    className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                  >
+                                    <option value="left">Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="right">Right</option>
+                                  </select>
+                                </div>
 
-                          {block.embedHtml ? (
-                            <div className="pt-2 border-t border-border/40">
-                              <EmbedBlock
-                                embedHtml={block.embedHtml}
-                                caption={block.embedCaption}
-                                aspectRatio={block.embedAspectRatio || "16:9"}
-                                sandboxMode={block.embedSandboxMode || "sandboxed"}
-                              />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-muted-foreground font-mono">Letterbox:</span>
+                                  <select
+                                    value={block.embedBackdropMode || "transparent"}
+                                    onChange={(e) =>
+                                      updateBlock(colIdx, block.id, {
+                                        embedBackdropMode: e.target.value as MediaBackdropMode,
+                                      })
+                                    }
+                                    className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                  >
+                                    <option value="transparent">Transparent</option>
+                                    <option value="blurred">Blurred Backdrop</option>
+                                    <option value="solid">Solid Color</option>
+                                  </select>
+                                </div>
+
+                                {block.embedBackdropMode === "solid" && (
+                                  <input
+                                    type="color"
+                                    value={block.embedBackdropColor || "#0D0E12"}
+                                    onChange={(e) =>
+                                      updateBlock(colIdx, block.id, {
+                                        embedBackdropColor: e.target.value,
+                                      })
+                                    }
+                                    title="Letterbox Color"
+                                    className="w-6 h-6 rounded border border-border cursor-pointer"
+                                  />
+                                )}
+
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-muted-foreground font-mono">Security:</span>
+                                  <select
+                                    value={block.embedSandboxMode || "sandboxed"}
+                                    onChange={(e) =>
+                                      updateBlock(colIdx, block.id, {
+                                        embedSandboxMode: e.target.value as EmbedSandboxMode,
+                                      })
+                                    }
+                                    className="text-xs py-1 px-1.5 rounded border border-border bg-background text-foreground cursor-pointer"
+                                  >
+                                    <option value="sandboxed">Standard Iframe Sandbox</option>
+                                    <option value="unconstrained">Unconstrained Trusted Embed</option>
+                                  </select>
+                                </div>
+                              </div>
                             </div>
-                          ) : (
-                            <div className="p-3 rounded border border-dashed border-border/80 text-center text-[11px] text-muted-foreground">
-                              Paste an &lt;iframe&gt; or third-party widget snippet above to render a live preview.
-                            </div>
-                          )}
-                        </div>
-                      )}
+
+                            <textarea
+                              rows={4}
+                              placeholder='Paste third-party HTML/embed snippet (<iframe src="...">, Spotify, SoundCloud, Instagram/TikTok scripts, Calendly, Google Maps, or Stripe/Razorpay checkout buttons)...'
+                              value={block.embedHtml || ""}
+                              onChange={(e) =>
+                                updateBlock(colIdx, block.id, { embedHtml: e.target.value })
+                              }
+                              className="w-full text-xs p-2 rounded-lg border border-border bg-slate-950 text-emerald-300 font-mono leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+
+                            {/* Visual Parameter Inspector for Embed HTML */}
+                            {block.embedHtml && (
+                              <div className="p-2 rounded-lg border border-border/60 bg-muted/20 space-y-1.5">
+                                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">
+                                  Visual Parameter Inspector (Auto-updates Embed URL parameters)
+                                </span>
+                                <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                                  {(
+                                    [
+                                      { key: "autoplay", label: "Autoplay" },
+                                      { key: "loop", label: "Loop" },
+                                      { key: "mute", label: "Mute" },
+                                      { key: "controls", label: "Player Controls" },
+                                      { key: "modestBranding", label: "Modest Branding" },
+                                      { key: "captions", label: "Show Captions" },
+                                    ] as const
+                                  ).map((item) => (
+                                    <label
+                                      key={item.key}
+                                      className="inline-flex items-center gap-1.5 cursor-pointer text-foreground select-none"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={eParams[item.key]}
+                                        onChange={(e) => {
+                                          const updatedHtml = applyEmbedParameters(block.embedHtml, {
+                                            [item.key]: e.target.checked,
+                                          });
+                                          updateBlock(colIdx, block.id, { embedHtml: updatedHtml });
+                                        }}
+                                        className="rounded border-border"
+                                      />
+                                      {item.label}
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <input
+                              type="text"
+                              placeholder="Optional Caption / Attribution"
+                              value={block.embedCaption || ""}
+                              onChange={(e) =>
+                                updateBlock(colIdx, block.id, { embedCaption: e.target.value })
+                              }
+                              className="w-full text-xs p-1.5 rounded border border-border bg-background text-foreground font-serif"
+                            />
+
+                            {block.embedHtml ? (
+                              <div className="pt-2 border-t border-border/40">
+                                <EmbedBlock
+                                  embedHtml={block.embedHtml}
+                                  caption={block.embedCaption}
+                                  aspectRatio={block.embedAspectRatio || "16:9"}
+                                  sandboxMode={block.embedSandboxMode || "sandboxed"}
+                                  align={block.embedAlign}
+                                  backdropMode={block.embedBackdropMode}
+                                  backdropColor={block.embedBackdropColor}
+                                />
+                              </div>
+                            ) : (
+                              <div className="p-3 rounded border border-dashed border-border/80 text-center text-[11px] text-muted-foreground">
+                                Paste an &lt;iframe&gt; or third-party widget snippet above to render a live preview.
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {block.type === "AUDIO" && (
                         <div className="space-y-1.5">
@@ -2638,6 +2860,7 @@ export default function VisualPageBuilder({ initialPage, id: propId }: VisualPag
           slug: page.slug,
           metaDescription: page.metaDescription,
           isPublished,
+          allowShare: page.allowShare,
           sections: page.sections,
           config: page.config,
         }),
@@ -2701,30 +2924,65 @@ export default function VisualPageBuilder({ initialPage, id: propId }: VisualPag
         {/* Viewport Frame Switcher */}
         <ViewportSwitcher mode={viewport} onChange={setViewport} />
 
-        {/* Scroll Motion Selector */}
-        <div className="hidden lg:flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-md border border-border/60">
-          <span className="text-[11px] font-mono text-muted-foreground">Scroll Motion:</span>
-          <select
-            value={((page.config as Record<string, unknown> | undefined)?.scrollTransition as string) || "parallax-float"}
-            onChange={(e) => {
-              const val = e.target.value;
-              setPage({
-                ...page,
-                config: {
-                  ...((page.config as Record<string, unknown>) || {}),
-                  scrollTransition: val,
-                },
-              });
-              toast.info(`Page scroll motion set to "${val}"`);
-            }}
-            className="text-xs bg-transparent border-0 font-medium text-foreground cursor-pointer focus:outline-none"
-          >
-            <option value="parallax-float">Inertia Parallax</option>
-            <option value="book-turn">3D Book Flip</option>
-            <option value="stagger-reveal">Staggered Plates</option>
-            <option value="soft-fade">Soft Fade</option>
-            <option value="none">Standard Scroll</option>
-          </select>
+        {/* Scroll Motion & Per-Page Share Selector */}
+        <div className="hidden lg:flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-md border border-border/60">
+            <span className="text-[11px] font-mono text-muted-foreground">Scroll Motion:</span>
+            <select
+              value={((page.config as Record<string, unknown> | undefined)?.scrollTransition as string) || "parallax-float"}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPage({
+                  ...page,
+                  config: {
+                    ...((page.config as Record<string, unknown>) || {}),
+                    scrollTransition: val,
+                  },
+                });
+                toast.info(`Page scroll motion set to "${val}"`);
+              }}
+              className="text-xs bg-transparent border-0 font-medium text-foreground cursor-pointer focus:outline-none"
+            >
+              <option value="parallax-float">Inertia Parallax</option>
+              <option value="book-turn">3D Book Flip</option>
+              <option value="stagger-reveal">Staggered Plates</option>
+              <option value="soft-fade">Soft Fade</option>
+              <option value="none">Standard Scroll</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-md border border-border/60">
+            <span className="text-[11px] font-mono text-muted-foreground">Social Share:</span>
+            <select
+              value={
+                page.allowShare === true
+                  ? "enable"
+                  : page.allowShare === false
+                  ? "disable"
+                  : "inherit"
+              }
+              onChange={(e) => {
+                const v = e.target.value;
+                const nextVal = v === "enable" ? true : v === "disable" ? false : null;
+                setPage({
+                  ...page,
+                  allowShare: nextVal,
+                });
+                toast.info(
+                  nextVal === true
+                    ? "Social sharing enabled for this page"
+                    : nextVal === false
+                    ? "Social sharing hidden on this page"
+                    : "Social sharing set to inherit global setting"
+                );
+              }}
+              className="text-xs bg-transparent border-0 font-medium text-foreground cursor-pointer focus:outline-none"
+            >
+              <option value="inherit">Inherit Global</option>
+              <option value="enable">Enabled</option>
+              <option value="disable">Hidden on Page</option>
+            </select>
+          </div>
         </div>
 
         {/* Action Buttons */}

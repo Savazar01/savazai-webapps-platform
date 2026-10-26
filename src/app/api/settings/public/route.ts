@@ -30,6 +30,8 @@ export async function GET() {
         linkedinUrl: true,
         tiktokUrl: true,
         customSocialLinks: true,
+        enableSocialShare: true,
+        showFooterShare: true,
       },
     });
 
@@ -63,6 +65,8 @@ export async function GET() {
         linkedinUrl: settings?.linkedinUrl || null,
         tiktokUrl: settings?.tiktokUrl || null,
         customSocialLinks: Array.isArray(settings?.customSocialLinks) ? settings.customSocialLinks : [],
+        enableSocialShare: settings?.enableSocialShare !== false,
+        showFooterShare: settings?.showFooterShare !== false,
         formSecurityConfig: {
           contactForm: {
             enableCaptcha: Boolean(contactForm.enableCaptcha),

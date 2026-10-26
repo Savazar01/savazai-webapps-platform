@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { Sparkles, Mail, Phone } from "lucide-react";
 import { PrivacyModalTrigger } from "./privacy-request-modal";
 import { SocialPlatformIcon, type CustomSocialLink } from "./social-icon";
+import { SocialShareBar } from "./social-share-bar";
 
 interface SocialLinkItem {
   platform: string;
@@ -263,6 +264,18 @@ export async function Footer() {
             </ul>
           </div>
         </div>
+
+        {/* Universal Footer Social Share Bar */}
+        {settings?.enableSocialShare !== false && settings?.showFooterShare !== false && (
+          <div className="mb-8">
+            <SocialShareBar
+              title={siteName}
+              description={aboutText}
+              entityLabel="Archive"
+              enabled={true}
+            />
+          </div>
+        )}
 
         {/* Bottom Copyright Strip */}
         <div className="pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">

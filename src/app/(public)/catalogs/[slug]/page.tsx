@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { CatalogMatrixPage } from "@/components/public/catalog-matrix-page";
 import { ProtectedImage } from "@/components/public/protected-image";
+import { SocialShareBar } from "@/components/public/social-share-bar";
 import {
   resolveContainerThemeScope,
   resolveContainerContrast,
@@ -821,6 +822,17 @@ export default async function ECatalogReaderPage({ params, searchParams }: PageP
           </Link>
 
           <div className="flex items-center gap-3">
+            {settings?.enableSocialShare !== false && (
+              <SocialShareBar
+                title={catalog.title}
+                description={catalog.subtitle || undefined}
+                url={`/catalogs/${catalog.slug}`}
+                mediaUrl={catalog.coverImage || catalog.coverImageUrl || undefined}
+                entityLabel="e-Catalog"
+                variant="compact"
+                enabled={true}
+              />
+            )}
             {catalog.downloadablePdfUrl ? (
               <a
                 href={catalog.downloadablePdfUrl}

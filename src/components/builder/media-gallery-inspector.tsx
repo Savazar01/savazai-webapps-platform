@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { UniversalMediaDialog } from "@/components/admin/universal-media-dialog";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -807,10 +808,11 @@ export function MediaGalleryInspector({ data, onChange }: MediaGalleryInspectorP
   };
 
   const handleUploadFile = async (
-    file: File,
+    rawFile: File,
     target: "customWall" | "perWall" | "canvasBg",
     targetWallIndex = 0
   ) => {
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploading(true);
     const body = new FormData();
     body.append("file", file);
@@ -1005,9 +1007,10 @@ export function MediaGalleryInspector({ data, onChange }: MediaGalleryInspectorP
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploading(true);
     const body = new FormData();
     body.append("file", file);

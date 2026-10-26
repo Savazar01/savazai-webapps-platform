@@ -21,6 +21,7 @@ import { DynamicFormBlock, FormFieldConfig, DynamicFormConfig } from "@/componen
 import { MediaGalleryBlock, MediaGalleryItem, MediaGalleryDisplayMode } from "@/components/public/blocks/media-gallery-block";
 import { VideoBlock } from "@/components/public/builder/video-block";
 import { EmbedBlock, type EmbedAspectRatio, type EmbedSandboxMode } from "@/components/public/builder/embed-block";
+import type { MediaAspectRatio, MediaAlign, MediaBackdropMode } from "@/lib/video-embed-parser";
 import type { ExhibitionWallConfig } from "@/components/public/blocks/gallery-exhibition-wall/exhibition-wall-block";
 import { HeroShowcaseBlock, type HeroArchetype, type HotspotPin } from "@/components/public/blocks/hero-showcase-block";
 import { ArchetypeShowcaseBlock } from "@/components/public/blocks/landing/archetype-showcase-blocks";
@@ -725,6 +726,10 @@ export interface ColumnBlock {
   hasBorder?: boolean;
   borderWidth?: number;
   videoUrl?: string;
+  videoAspectRatio?: MediaAspectRatio;
+  videoAlign?: MediaAlign;
+  videoBackdropMode?: MediaBackdropMode;
+  videoBackdropColor?: string;
   audioUrl?: string;
   audioTitle?: string;
   dividerStyle?: "gold-leaf" | "lotus" | "line" | "temple";
@@ -737,6 +742,9 @@ export interface ColumnBlock {
   embedCaption?: string;
   embedAspectRatio?: EmbedAspectRatio;
   embedSandboxMode?: EmbedSandboxMode;
+  embedAlign?: MediaAlign;
+  embedBackdropMode?: MediaBackdropMode;
+  embedBackdropColor?: string;
   // PDF Viewer Properties
   pdfUrl?: string;
   fileUrl?: string;
@@ -846,6 +854,10 @@ export function renderColumnBlock(
         <VideoBlock
           videoUrl={block.videoUrl}
           caption={block.mediaAlt || block.title}
+          aspectRatio={block.videoAspectRatio}
+          align={block.videoAlign}
+          backdropMode={block.videoBackdropMode}
+          backdropColor={block.videoBackdropColor}
         />
       </div>
     );
@@ -859,6 +871,9 @@ export function renderColumnBlock(
           caption={block.embedCaption || block.title}
           aspectRatio={block.embedAspectRatio}
           sandboxMode={block.embedSandboxMode}
+          align={block.embedAlign}
+          backdropMode={block.embedBackdropMode}
+          backdropColor={block.embedBackdropColor}
         />
       </div>
     );

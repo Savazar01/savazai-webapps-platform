@@ -557,7 +557,26 @@ All code generation and architectural modifications must adhere to the specializ
 - **Universal Video Embed Parser (`src/lib/video-embed-parser.ts` & `src/components/public/builder/video-block.tsx`)**:
   - Automatically transforms standard watch/post URLs (YouTube `watch?v=`, `youtu.be/`, `shorts/`, Vimeo, Facebook Videos, Instagram Posts/Reels) into valid embed URLs (`youtube-nocookie.com/embed/ID`, `player.vimeo.com/video/ID`, etc.) or native HTML5 `<video controls playsInline />`, eliminating `X-Frame-Options: SAMEORIGIN` / "This Content is blocked" iframe errors.
 - **Page Builder Embed Code / Source HTML Block (`src/components/public/builder/embed-block.tsx`)**:
-  - Added `+ Embed / HTML` (`EMBED_HTML`) block to the Page Builder Row toolbar (`builder-client.tsx` and `page-matrix-studio.tsx`) with aspect ratio controls (`16:9`, `4:3`, `1:1`, `auto`) and security sandboxing toggles (`sandboxed` iframe vs `unconstrained` trusted script execution for Stripe, Razorpay, Calendly, Spotify, or social embeds).
+  - Added `+ Embed / HTML` (`EMBED_HTML`) block to the Page Builder Row toolbar (`builder-client.tsx` and `page-matrix-studio.tsx`) with aspect ratio controls (`16:9`, `9:16`, `1:1`, `4:5`, `4:3`, `auto`) and security sandboxing toggles (`sandboxed` iframe vs `unconstrained` trusted script execution for Stripe, Razorpay, Calendly, Spotify, or social embeds).
+
+### AB. Universal Social Sharing Engine, Client-Side WebP Image Optimizer, Visitor Telemetry Analytics with Excel Export & Vertical Video / Embed Parameter Studio
+- **Universal Social & Native Sharing Engine (`src/components/public/social-share-bar.tsx`)**:
+  - Multi-tier share controls: Global toggle (`SystemSetting.enableSocialShare` in `Admin -> Settings -> General`), Footer toggle (`SystemSetting.showFooterShare` in `Admin -> Settings -> Footer`), and Per-Page override (`Page.allowShare` in Page Builder top header bar).
+  - Invokes native `navigator.share` on mobile viewports and provides a curated share popover/bar on desktop supporting WhatsApp, Facebook, X/Twitter, LinkedIn, Pinterest, Email, and 1-click Copy Link with Sonner toast confirmation.
+  - Integrated across Public Pages (`/[slug]` & `/`), Dynamic Sections (`DynamicPageSections`), Artworks (`/artwork/[slug]`), Events (`/events/[slug]`), e-Catalogs (`/catalogs/[slug]`), Photo Gallery lightboxes (`MediaGalleryBlock`), and the global `Footer`.
+- **Client-Side WebP Image Optimization Pipeline (`src/lib/client-image-optimizer.ts`)**:
+  - Intercepts local file uploads across non-artwork modules (`UniversalMediaDialog`, `MediaGalleryInspector`, `EventFormModal`, `AdminPostsPage`, `VisualPageBuilder`, `PageMatrixStudio`, and `MediaVaultManager`).
+  - When a raster image (JPEG/PNG/BMP) exceeds `1 MB` or `2000px` dimension, renders an interactive comparison modal (**"Large Image Detected: Convert to High-Efficiency WebP?"**) displaying original vs WebP size (`canvas.toBlob("image/webp", 0.85)`), percentage reduction, preview thumbnail, and **"Convert & Upload WebP"** vs **"Keep Original"** options.
+  - **Strict Artwork Master Exclusion**: Artwork uploads (`src/app/admin/(dashboard)/artworks/page.tsx` and `UniversalMediaDialog` when `isArtwork: true`) completely bypass WebP compression prompts to preserve uncompressed high-resolution archival masters.
+- **Privacy-First Visitor Telemetry, Geographic Heatmap & Excel Export (`VisitorSession` & `PageVisit`)**:
+  - Lightweight client tracker (`src/lib/analytics-tracker.ts` mounted in `src/app/layout.tsx`) sets a stateless `svz_vid` cookie and dispatches non-blocking route view and dwell duration (`dwellMs`) beacons to `POST /api/telemetry/visit`.
+  - Captures device form factor (`Desktop`, `Mobile`, `Tablet`), browser, OS, privacy-hashed IP, and approximate geolocation (`Country`, `Region`, `City` via proxy headers with IANA timezone fallback).
+  - Admin Overview Dashboard (`src/app/admin/(dashboard)/page.tsx`) renders `<VisitorAnalyticsPanel />` featuring KPI cards, Top Visited Routes, Device & Browser Matrix, Geographical Distribution, a filterable Visitor Session History table, and **"Download Analytics (.xlsx)"** (`GET /api/admin/analytics/export` powered by `exceljs`).
+- **Expanded Video / Embed Aspect Ratios, Letterbox Backdrop Filler & Visual Parameter Inspector (`src/lib/video-embed-parser.ts`)**:
+  - Expanded aspect ratios across `VideoBlock` and `EmbedBlock`: `16:9` (Widescreen), `9:16` (YouTube Shorts, Instagram Reels, TikTok, Facebook Reels), `1:1` (Square Social Feed), `4:5` (Instagram Portrait), `4:3` (Classic TV), and `auto` (Unconstrained).
+  - Added horizontal alignment (`left`, `center`, `right`) and configurable letterbox stage filler (`transparent`, `blurred` ambient backdrop, or `solid` custom color picker) for vertical/portrait videos.
+  - Added **Visual Parameter Inspector** in both `VIDEO` and `EMBED_HTML` Page Builder widgets (`extractEmbedParameters` & `applyEmbedParameters`), exposing interactive checkboxes for `Autoplay`, `Loop`, `Mute`, `Player Controls`, `Modest Branding`, and `Show Captions` that automatically update embed URLs without manual source code editing.
+
 
 
 

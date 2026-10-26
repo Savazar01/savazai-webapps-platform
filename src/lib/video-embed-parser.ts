@@ -3,20 +3,34 @@ export type VideoProvider =
   | "vimeo"
   | "facebook"
   | "instagram"
+  | "tiktok"
   | "native"
   | "iframe";
+
+export type MediaAspectRatio = "16:9" | "9:16" | "1:1" | "4:5" | "4:3" | "auto";
+export type MediaAlign = "left" | "center" | "right";
+export type MediaBackdropMode = "transparent" | "solid" | "blurred";
 
 export interface ParsedVideoEmbed {
   kind: "iframe" | "video";
   provider: VideoProvider;
   embedUrl: string;
   originalUrl: string;
-  aspectRatio?: "16:9" | "9:16" | "1:1" | "auto";
+  aspectRatio?: MediaAspectRatio;
+}
+
+export interface EmbedMediaParams {
+  autoplay: boolean;
+  loop: boolean;
+  mute: boolean;
+  controls: boolean;
+  modestBranding: boolean;
+  captions: boolean;
 }
 
 /**
  * Universal Video & Social Media Embed URL Transformer
- * Converts raw public watch/post URLs (YouTube, Vimeo, Facebook, Instagram)
+ * Converts raw public watch/post URLs (YouTube, Vimeo, Facebook, Instagram, TikTok)
  * into legitimate embeddable URLs to prevent CSP / X-Frame-Options blocking errors.
  */
 export function parseVideoEmbedUrl(rawInput: string | undefined | null): ParsedVideoEmbed | null {
@@ -80,8 +94,10 @@ export function parseVideoEmbedUrl(rawInput: string | undefined | null): ParsedV
 
       if (videoId) {
         const sanitizedId = videoId.replace(/[^a-zA-Z0-9_-]/g, "");
-        const params = new URLSearchParams();
-        params.set("rel", "0");
+        const params = new URLSearchParams(parsed.search);
+        params.delete("v");
+        params.delete("t");
+        if (!params.has("rel")) params.set("rel", "0");
         const startParam = parsed.searchParams.get("t") || parsed.searchParams.get("start");
         if (startParam) {
           const seconds = parseInt(startParam.replace(/s$/i, ""), 10);
@@ -102,20 +118,20 @@ export function parseVideoEmbedUrl(rawInput: string | undefined | null): ParsedV
     // 3. Vimeo (vimeo.com/ID, vimeo.com/channels/.../ID, player.vimeo.com/video/ID)
     if (host === "vimeo.com" || host === "player.vimeo.com") {
       const segments = parsed.pathname.split("/").filter(Boolean);
-      // Find numeric video ID segment
       const numericId = [...segments].reverse().find((seg) => /^\d+$/.test(seg));
       if (numericId) {
-        // Check for unlisted hash (e.g. vimeo.com/123456789/abcdef123)
         const idIdx = segments.indexOf(numericId);
         const hashSegment =
           idIdx >= 0 && segments[idIdx + 1] && /^[a-zA-Z0-9]+$/.test(segments[idIdx + 1])
             ? segments[idIdx + 1]
             : parsed.searchParams.get("h");
-        const hashQuery = hashSegment ? `?h=${encodeURIComponent(hashSegment)}` : "";
+        const params = new URLSearchParams(parsed.search);
+        if (hashSegment) params.set("h", hashSegment);
+        const qs = params.toString();
         return {
           kind: "iframe",
           provider: "vimeo",
-          embedUrl: `https://player.vimeo.com/video/${numericId}${hashQuery}`,
+          embedUrl: `https://player.vimeo.com/video/${numericId}${qs ? `?${qs}` : ""}`,
           originalUrl: trimmed,
           aspectRatio: "16:9",
         };
@@ -164,6 +180,20 @@ export function parseVideoEmbedUrl(rawInput: string | undefined | null): ParsedV
         };
       }
     }
+
+    // 6. TikTok Video (tiktok.com/@user/video/ID or tiktok.com/embed/v2/ID)
+    if (host === "tiktok.com" || host === "vm.tiktok.com" || host === "vt.tiktok.com") {
+      const ttMatch = parsed.pathname.match(/\/(?:video|v2)\/(\d+)/i);
+      if (ttMatch) {
+        return {
+          kind: "iframe",
+          provider: "tiktok",
+          embedUrl: `https://www.tiktok.com/embed/v2/${ttMatch[1]}`,
+          originalUrl: trimmed,
+          aspectRatio: "9:16",
+        };
+      }
+    }
   } catch {
     // Not a full URL with protocol — fall through to regex fallbacks
   }
@@ -200,4 +230,124 @@ export function parseVideoEmbedUrl(rawInput: string | undefined | null): ParsedV
     originalUrl: trimmed,
     aspectRatio: "16:9",
   };
+}
+
+/**
+ * Parses URL query parameters or HTML embed attributes into a structured EmbedMediaParams object
+ * for the Visual Parameter Inspector.
+ */
+export function extractEmbedParameters(urlOrHtml: string | undefined | null): EmbedMediaParams {
+  const defaults: EmbedMediaParams = {
+    autoplay: false,
+    loop: false,
+    mute: false,
+    controls: true,
+    modestBranding: true,
+    captions: false,
+  };
+
+  if (!urlOrHtml || typeof urlOrHtml !== "string") return defaults;
+  const trimmed = urlOrHtml.trim();
+  if (!trimmed) return defaults;
+
+  const iframeSrcMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  const targetUrlStr = iframeSrcMatch ? iframeSrcMatch[1] : trimmed;
+
+  try {
+    const parsed = parseVideoEmbedUrl(targetUrlStr);
+    const urlObj = new URL(parsed?.embedUrl || targetUrlStr, "https://savazar.com");
+    const sp = urlObj.searchParams;
+
+    const isTruthy = (val: string | null) => val === "1" || val === "true";
+    const isFalsy = (val: string | null) => val === "0" || val === "false";
+
+    return {
+      autoplay: isTruthy(sp.get("autoplay")) || /\bautoplay\b/i.test(trimmed),
+      loop: isTruthy(sp.get("loop")) || /\bloop\b/i.test(trimmed),
+      mute:
+        isTruthy(sp.get("mute")) ||
+        isTruthy(sp.get("muted")) ||
+        /\bmuted\b/i.test(trimmed),
+      controls: isFalsy(sp.get("controls")) ? false : true,
+      modestBranding: isFalsy(sp.get("modestbranding")) ? false : true,
+      captions:
+        isTruthy(sp.get("cc_load_policy")) ||
+        isTruthy(sp.get("texttrack")) ||
+        isTruthy(sp.get("show_captions")),
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+/**
+ * Applies updated EmbedMediaParams to a raw video URL or HTML <iframe ...> snippet.
+ */
+export function applyEmbedParameters(
+  urlOrHtml: string | undefined | null,
+  updates: Partial<EmbedMediaParams>
+): string {
+  const raw = (urlOrHtml || "").trim();
+  if (!raw) return "";
+
+  const current = {
+    ...extractEmbedParameters(raw),
+    ...updates,
+  };
+
+  const updateSingleUrl = (inputUrl: string): string => {
+    const parsed = parseVideoEmbedUrl(inputUrl);
+    const baseStr = parsed?.embedUrl || inputUrl;
+    try {
+      const urlObj = new URL(baseStr);
+      const sp = urlObj.searchParams;
+
+      if (current.autoplay) sp.set("autoplay", "1");
+      else sp.delete("autoplay");
+
+      if (current.loop) {
+        sp.set("loop", "1");
+        // YouTube requires playlist=VIDEO_ID for single video loop
+        const ytIdMatch = urlObj.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+        if (ytIdMatch && ytIdMatch[1]) {
+          sp.set("playlist", ytIdMatch[1]);
+        }
+      } else {
+        sp.delete("loop");
+        sp.delete("playlist");
+      }
+
+      if (current.mute) {
+        sp.set("mute", "1");
+        sp.set("muted", "1");
+      } else {
+        sp.delete("mute");
+        sp.delete("muted");
+      }
+
+      if (!current.controls) sp.set("controls", "0");
+      else sp.delete("controls");
+
+      if (current.modestBranding) sp.set("modestbranding", "1");
+      else sp.set("modestbranding", "0");
+
+      if (current.captions) sp.set("cc_load_policy", "1");
+      else sp.delete("cc_load_policy");
+
+      return urlObj.toString();
+    } catch {
+      return inputUrl;
+    }
+  };
+
+  if (/<iframe\b/i.test(raw)) {
+    return raw.replace(
+      /(<iframe\b[^>]*?\bsrc=["'])([^"']+)(["'][^>]*>)/gi,
+      (_full, prefix: string, srcUrl: string, suffix: string) => {
+        return `${prefix}${updateSingleUrl(srcUrl)}${suffix}`;
+      }
+    );
+  }
+
+  return updateSingleUrl(raw);
 }

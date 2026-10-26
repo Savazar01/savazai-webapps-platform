@@ -150,6 +150,10 @@ export async function PUT(request: NextRequest) {
       linkedinUrl: body.linkedinUrl !== undefined ? (body.linkedinUrl ? String(body.linkedinUrl).trim() : null) : undefined,
       tiktokUrl: body.tiktokUrl !== undefined ? (body.tiktokUrl ? String(body.tiktokUrl).trim() : null) : undefined,
       customSocialLinks: body.customSocialLinks !== undefined ? body.customSocialLinks : undefined,
+      enableSocialShare:
+        body.enableSocialShare !== undefined ? Boolean(body.enableSocialShare) : undefined,
+      showFooterShare:
+        body.showFooterShare !== undefined ? Boolean(body.showFooterShare) : undefined,
       logoUrl: body.logoUrl,
       faviconUrl: body.faviconUrl,
       copyrightNoticeHeader:

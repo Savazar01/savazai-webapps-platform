@@ -55,6 +55,13 @@ import { AiAssistantModal } from "@/components/admin/ai-assistant-modal";
 import { ColumnBlock } from "@/components/public/tiptap-renderer";
 import { VideoBlock } from "@/components/public/builder/video-block";
 import { EmbedBlock, type EmbedAspectRatio, type EmbedSandboxMode } from "@/components/public/builder/embed-block";
+import {
+  extractEmbedParameters,
+  applyEmbedParameters,
+  type MediaAspectRatio,
+  type MediaAlign,
+  type MediaBackdropMode,
+} from "@/lib/video-embed-parser";
 import { TimelineInspector } from "@/components/builder/timeline-inspector";
 import type { TimelineMilestone } from "@/components/public/blocks/timeline-block";
 import type { TimelineGranularity, TimelineLayout, TimelineItem } from "@/types/timeline";
@@ -62,6 +69,7 @@ import { FormBlockInspector, type FormFieldConfig } from "@/components/builder/f
 import { MediaGalleryInspector } from "@/components/builder/media-gallery-inspector";
 import { MediaGalleryBlock, type MediaGalleryItem } from "@/components/public/blocks/media-gallery-block";
 import { toast } from "sonner";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 import { type ContrastMode, resolveContainerContrast } from "@/lib/theme-contrast";
 
 export interface PageMatrixCellSegment {
@@ -525,11 +533,14 @@ export function PageMatrixStudio({
     row: number,
     col: number,
     blockId: string,
-    file: File
+    rawFile: File
   ) => {
+    const file = await optimizeImageForWebpUpload(rawFile);
     setUploadingBlockId(blockId);
     const body = new FormData();
     body.append("file", file);
+    body.append("mediaType", "general");
+    body.append("isArtwork", "false");
     try {
       const res = await fetch("/api/admin/media/upload", {
         method: "POST",
@@ -537,7 +548,8 @@ export function PageMatrixStudio({
       });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
-      updateBlockInCell(row, col, blockId, { mediaUrl: data.url });
+      const url = data.publicUrl || data.watermarkedUrl || data.primaryImageUrl || data.url;
+      updateBlockInCell(row, col, blockId, { mediaUrl: url });
       toast.success("Image uploaded successfully");
     } catch {
       toast.error("Failed to upload image");
@@ -1449,84 +1461,230 @@ export function PageMatrixStudio({
                       )}
 
                       {/* VIDEO Block */}
-                      {block.type === "VIDEO" && (
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-mono text-muted-foreground">
-                            Video URL (YouTube, Vimeo, Facebook, Instagram, MP4)
-                          </label>
-                          <Input
-                            value={block.videoUrl || ""}
-                            onChange={(e) =>
-                              updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
-                                videoUrl: e.target.value,
-                              })
-                            }
-                            placeholder="https://www.youtube.com/watch?v=..."
-                            className="h-7 text-xs font-mono"
-                          />
-                          {block.videoUrl && (
-                            <VideoBlock videoUrl={block.videoUrl} caption={block.mediaAlt} />
-                          )}
-                        </div>
-                      )}
+                      {block.type === "VIDEO" && (() => {
+                        const vParams = extractEmbedParameters(block.videoUrl);
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <label className="text-[10px] font-mono text-muted-foreground">
+                                Video URL (YouTube, Shorts, Reels, TikTok, Vimeo, MP4)
+                              </label>
+                              <div className="flex items-center gap-1">
+                                <select
+                                  value={block.videoAspectRatio || "16:9"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      videoAspectRatio: e.target.value as MediaAspectRatio,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="16:9">16:9</option>
+                                  <option value="9:16">9:16 (Shorts/Reels)</option>
+                                  <option value="1:1">1:1 (Square)</option>
+                                  <option value="4:5">4:5 (Portrait)</option>
+                                  <option value="4:3">4:3</option>
+                                  <option value="auto">Auto</option>
+                                </select>
+                                <select
+                                  value={block.videoAlign || "center"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      videoAlign: e.target.value as MediaAlign,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="left">Left</option>
+                                  <option value="center">Center</option>
+                                  <option value="right">Right</option>
+                                </select>
+                                <select
+                                  value={block.videoBackdropMode || "transparent"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      videoBackdropMode: e.target.value as MediaBackdropMode,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="transparent">Transparent</option>
+                                  <option value="blurred">Blurred BG</option>
+                                  <option value="solid">Solid Color</option>
+                                </select>
+                              </div>
+                            </div>
+                            <Input
+                              value={block.videoUrl || ""}
+                              onChange={(e) =>
+                                updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                  videoUrl: e.target.value,
+                                })
+                              }
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              className="h-7 text-xs font-mono"
+                            />
+                            {block.videoUrl && (
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] p-1.5 rounded bg-muted/30 border border-border/50">
+                                {(
+                                  [
+                                    { key: "autoplay", label: "Autoplay" },
+                                    { key: "loop", label: "Loop" },
+                                    { key: "mute", label: "Mute" },
+                                    { key: "controls", label: "Controls" },
+                                  ] as const
+                                ).map((item) => (
+                                  <label key={item.key} className="inline-flex items-center gap-1 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={vParams[item.key]}
+                                      onChange={(e) => {
+                                        const updatedUrl = applyEmbedParameters(block.videoUrl, {
+                                          [item.key]: e.target.checked,
+                                        });
+                                        updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                          videoUrl: updatedUrl,
+                                        });
+                                      }}
+                                    />
+                                    {item.label}
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                            {block.videoUrl && (
+                              <VideoBlock
+                                videoUrl={block.videoUrl}
+                                caption={block.mediaAlt}
+                                aspectRatio={block.videoAspectRatio}
+                                align={block.videoAlign}
+                                backdropMode={block.videoBackdropMode}
+                                backdropColor={block.videoBackdropColor}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* EMBED_HTML Block */}
-                      {block.type === "EMBED_HTML" && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <label className="text-[10px] font-mono text-muted-foreground">
-                              Embed / HTML Code
-                            </label>
-                            <div className="flex items-center gap-1.5">
-                              <select
-                                value={block.embedAspectRatio || "16:9"}
-                                onChange={(e) =>
-                                  updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
-                                    embedAspectRatio: e.target.value as EmbedAspectRatio,
-                                  })
-                                }
-                                className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
-                              >
-                                <option value="16:9">16:9</option>
-                                <option value="4:3">4:3</option>
-                                <option value="1:1">1:1</option>
-                                <option value="auto">Natural</option>
-                              </select>
-                              <select
-                                value={block.embedSandboxMode || "sandboxed"}
-                                onChange={(e) =>
-                                  updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
-                                    embedSandboxMode: e.target.value as EmbedSandboxMode,
-                                  })
-                                }
-                                className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
-                              >
-                                <option value="sandboxed">Sandboxed</option>
-                                <option value="unconstrained">Unconstrained</option>
-                              </select>
+                      {block.type === "EMBED_HTML" && (() => {
+                        const eParams = extractEmbedParameters(block.embedHtml);
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <label className="text-[10px] font-mono text-muted-foreground">
+                                Embed / HTML Code
+                              </label>
+                              <div className="flex flex-wrap items-center gap-1">
+                                <select
+                                  value={block.embedAspectRatio || "16:9"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      embedAspectRatio: e.target.value as EmbedAspectRatio,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="16:9">16:9</option>
+                                  <option value="9:16">9:16 (Shorts/Reels)</option>
+                                  <option value="1:1">1:1 (Square)</option>
+                                  <option value="4:5">4:5 (Portrait)</option>
+                                  <option value="4:3">4:3</option>
+                                  <option value="auto">Natural</option>
+                                </select>
+                                <select
+                                  value={block.embedAlign || "center"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      embedAlign: e.target.value as MediaAlign,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="left">Left</option>
+                                  <option value="center">Center</option>
+                                  <option value="right">Right</option>
+                                </select>
+                                <select
+                                  value={block.embedBackdropMode || "transparent"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      embedBackdropMode: e.target.value as MediaBackdropMode,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="transparent">Transparent</option>
+                                  <option value="blurred">Blurred BG</option>
+                                  <option value="solid">Solid Color</option>
+                                </select>
+                                <select
+                                  value={block.embedSandboxMode || "sandboxed"}
+                                  onChange={(e) =>
+                                    updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                      embedSandboxMode: e.target.value as EmbedSandboxMode,
+                                    })
+                                  }
+                                  className="text-[10px] py-0.5 px-1 rounded border border-border bg-background text-foreground"
+                                >
+                                  <option value="sandboxed">Sandboxed</option>
+                                  <option value="unconstrained">Unconstrained</option>
+                                </select>
+                              </div>
                             </div>
-                          </div>
-                          <textarea
-                            rows={3}
-                            value={block.embedHtml || ""}
-                            onChange={(e) =>
-                              updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
-                                embedHtml: e.target.value,
-                              })
-                            }
-                            placeholder='Paste <iframe src="..."> or widget snippet...'
-                            className="w-full text-xs p-2 rounded border border-border bg-slate-950 text-emerald-300 font-mono"
-                          />
-                          {block.embedHtml && (
-                            <EmbedBlock
-                              embedHtml={block.embedHtml}
-                              caption={block.embedCaption}
-                              aspectRatio={block.embedAspectRatio || "16:9"}
-                              sandboxMode={block.embedSandboxMode || "sandboxed"}
+                            <textarea
+                              rows={3}
+                              value={block.embedHtml || ""}
+                              onChange={(e) =>
+                                updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                  embedHtml: e.target.value,
+                                })
+                              }
+                              placeholder='Paste <iframe src="..."> or widget snippet...'
+                              className="w-full text-xs p-2 rounded border border-border bg-slate-950 text-emerald-300 font-mono"
                             />
-                          )}
-                        </div>
-                      )}
+                            {block.embedHtml && (
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] p-1.5 rounded bg-muted/30 border border-border/50">
+                                {(
+                                  [
+                                    { key: "autoplay", label: "Autoplay" },
+                                    { key: "loop", label: "Loop" },
+                                    { key: "mute", label: "Mute" },
+                                    { key: "controls", label: "Controls" },
+                                  ] as const
+                                ).map((item) => (
+                                  <label key={item.key} className="inline-flex items-center gap-1 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={eParams[item.key]}
+                                      onChange={(e) => {
+                                        const updatedHtml = applyEmbedParameters(block.embedHtml, {
+                                          [item.key]: e.target.checked,
+                                        });
+                                        updateBlockInCell(selectedCell.row, selectedCell.col, block.id, {
+                                          embedHtml: updatedHtml,
+                                        });
+                                      }}
+                                    />
+                                    {item.label}
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                            {block.embedHtml && (
+                              <EmbedBlock
+                                embedHtml={block.embedHtml}
+                                caption={block.embedCaption}
+                                aspectRatio={block.embedAspectRatio || "16:9"}
+                                sandboxMode={block.embedSandboxMode || "sandboxed"}
+                                align={block.embedAlign}
+                                backdropMode={block.embedBackdropMode}
+                                backdropColor={block.embedBackdropColor}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* AUDIO Block */}
                       {block.type === "AUDIO" && (

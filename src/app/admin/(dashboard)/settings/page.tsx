@@ -304,6 +304,8 @@ export default function AdminSettingsPage() {
     pinterestUrl: "",
     linkedinUrl: "",
     tiktokUrl: "",
+    enableSocialShare: true,
+    showFooterShare: true,
   });
 
   // Dedicated Footer Config State
@@ -424,6 +426,8 @@ export default function AdminSettingsPage() {
             pinterestUrl: data.pinterestUrl || "",
             linkedinUrl: data.linkedinUrl || "",
             tiktokUrl: data.tiktokUrl || "",
+            enableSocialShare: data.enableSocialShare !== false,
+            showFooterShare: data.showFooterShare !== false,
             logoUrl: data.logoUrl || "",
             faviconUrl: data.faviconUrl || "",
             adminLoginTitle: data.adminLoginTitle || "SavazAI WebApps Platform Admin",
@@ -1211,6 +1215,23 @@ export default function AdminSettingsPage() {
                         className="text-xs font-mono"
                       />
                     </div>
+                  </div>
+
+                  {/* Universal Social & Native Sharing Engine Global Toggle */}
+                  <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-sm">
+                        <Share2 className="w-4 h-4 text-primary" />
+                        Universal Social &amp; Native Sharing Engine
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        Enable direct sharing across Pages, Sections, Artworks, Events, Photo Galleries, and e-Catalogs (Web Share API on mobile + WhatsApp, Facebook, X, LinkedIn, Pinterest, Email &amp; Copy Link on desktop).
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.enableSocialShare}
+                      onCheckedChange={(val) => setForm({ ...form, enableSocialShare: val })}
+                    />
                   </div>
 
                   {/* Form Security & Anti-Spam Verification */}
@@ -2670,6 +2691,23 @@ export default function AdminSettingsPage() {
                         className="text-xs"
                       />
                     </div>
+                  </div>
+
+                  {/* Footer Social Share Bar Placement Toggle */}
+                  <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-sm">
+                        <Share2 className="w-4 h-4 text-primary" />
+                        Display Social Share Bar in Footer
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        Show a site-wide social &amp; native share bar inside the global public footer (requires global social sharing to be enabled in General settings).
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.showFooterShare}
+                      onCheckedChange={(val) => setForm({ ...form, showFooterShare: val })}
+                    />
                   </div>
 
                   {/* Legal Links Manager */}

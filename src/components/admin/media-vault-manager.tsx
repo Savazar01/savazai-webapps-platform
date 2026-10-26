@@ -20,6 +20,7 @@ import {
   Filter,
   Loader2,
   FolderOpen,
+  UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 import type { MediaVaultAsset } from "@/app/api/admin/media/vault/route";
 
 function formatBytes(bytes: number): string {
@@ -99,6 +101,8 @@ export function MediaVaultManager() {
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [targetDeleteUrls, setTargetDeleteUrls] = React.useState<string[]>([]);
   const [deleting, setDeleting] = React.useState(false);
+  const [uploadingVault, setUploadingVault] = React.useState(false);
+  const vaultUploadInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const loadVault = React.useCallback(async () => {
     setLoading(true);
@@ -118,6 +122,44 @@ export function MediaVaultManager() {
       setLoading(false);
     }
   }, []);
+
+  const handleVaultUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingVault(true);
+    try {
+      let uploadedCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const rawFile = files[i];
+        const file = await optimizeImageForWebpUpload(rawFile);
+        const body = new FormData();
+        body.append("file", file);
+        body.append(
+          "mediaType",
+          file.type.includes("pdf") ? "document" : "general"
+        );
+        body.append("isArtwork", "false");
+
+        const res = await fetch("/api/admin/media/upload", {
+          method: "POST",
+          body,
+        });
+        if (res.ok) uploadedCount++;
+      }
+      if (uploadedCount > 0) {
+        toast.success(`Uploaded ${uploadedCount} asset(s) to Media Vault!`);
+        await loadVault();
+      } else {
+        toast.error("Failed to upload selected file(s)");
+      }
+    } catch {
+      toast.error("Error uploading file(s) to Media Vault");
+    } finally {
+      setUploadingVault(false);
+      if (vaultUploadInputRef.current) vaultUploadInputRef.current.value = "";
+    }
+  };
 
   React.useEffect(() => {
     let active = true;
@@ -347,6 +389,29 @@ export function MediaVaultManager() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <input
+                ref={vaultUploadInputRef}
+                type="file"
+                multiple
+                accept="image/*,application/pdf,video/*,audio/*"
+                className="hidden"
+                onChange={handleVaultUpload}
+              />
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={uploadingVault}
+                onClick={() => vaultUploadInputRef.current?.click()}
+                className="h-8 text-xs gap-1.5 cursor-pointer"
+              >
+                {uploadingVault ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <UploadCloud className="w-3.5 h-3.5" />
+                )}
+                Upload Media
+              </Button>
               <Button
                 type="button"
                 variant={orphansOnly ? "default" : "outline"}

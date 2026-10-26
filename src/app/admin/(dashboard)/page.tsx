@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { DashboardLayoutManager, DashboardWidgetData } from "@/components/admin/dashboard-layout-manager";
 import { EditablePageHeader } from "@/components/admin/editable-page-header";
+import { VisitorAnalyticsPanel } from "@/components/admin/visitor-analytics-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -233,6 +234,9 @@ export default async function AdminDashboardPage() {
 
       {/* Dynamic Customizable Layout Manager */}
       <DashboardLayoutManager initialWidgets={initialWidgets} />
+
+      {/* Visitor Telemetry, Analytics Dashboard & Excel Export */}
+      <VisitorAnalyticsPanel />
     </div>
   );
 }

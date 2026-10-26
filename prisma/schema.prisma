@@ -146,6 +146,8 @@ model SystemSetting {
   linkedinUrl       String?
   tiktokUrl         String?
   customSocialLinks Json?    // [{ label: string, url: string, icon: string }]
+  enableSocialShare Boolean  @default(true)
+  showFooterShare   Boolean  @default(true)
   // Branding
   logoUrl           String?
   faviconUrl        String?
@@ -225,6 +227,7 @@ model Page {
   eyebrowTag      String?
   heroTitle       String?
   heroSubtitle    String?       @db.Text
+  allowShare      Boolean?      // Optional per-page share bar override (null = inherit global)
   config          Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -845,4 +848,53 @@ model EmailDispatchLog {
 
   @@map("email_dispatch_logs")
 }
+
+// -----------------------------------------------------------------------------
+// Privacy-First Visitor Telemetry & Session Analytics Engine
+// -----------------------------------------------------------------------------
+
+model VisitorSession {
+  id           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  visitorId    String      @unique // Stateless cookie identifier (svz_vid)
+  ipAddress    String?
+  country      String?     @default("Unknown")
+  region       String?
+  city         String?
+  deviceType   String      @default("Desktop") // "Desktop" | "Mobile" | "Tablet"
+  browser      String      @default("Unknown")
+  os           String      @default("Unknown")
+  userAgent    String?     @db.Text
+  referrer     String?     @db.Text
+  entryPath    String      @default("/")
+  lastPath     String      @default("/")
+  pageViews    Int         @default(1)
+  totalDwellMs Int         @default(0)
+  firstSeenAt  DateTime    @default(now())
+  lastSeenAt   DateTime    @default(now())
+
+  visits       PageVisit[]
+
+  @@index([lastSeenAt])
+  @@index([deviceType])
+  @@index([country])
+  @@map("visitor_sessions")
+}
+
+model PageVisit {
+  id          String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  sessionId   String         @db.Uuid
+  path        String
+  pageTitle   String?
+  referrer    String?        @db.Text
+  dwellMs     Int            @default(0)
+  visitedAt   DateTime       @default(now())
+
+  session     VisitorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([path])
+  @@index([visitedAt])
+  @@map("page_visits")
+}
+
 

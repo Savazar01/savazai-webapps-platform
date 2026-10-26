@@ -25,6 +25,7 @@ import {
   FileCheck2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { optimizeImageForWebpUpload } from "@/lib/client-image-optimizer";
 
 export interface UniversalMediaItem {
   url: string;
@@ -199,13 +200,14 @@ export function UniversalMediaDialog({
 
     try {
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        const rawFile = files[i];
+        const effectiveMediaType = mediaType ?? (rawFile.type.includes("pdf") ? "document" : isArtwork ? "artwork" : "general");
+        const effectiveIsArtwork = isArtwork || effectiveMediaType === "artwork";
+        const file = effectiveIsArtwork ? rawFile : await optimizeImageForWebpUpload(rawFile);
         setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`);
 
         const formData = new FormData();
         formData.append("file", file);
-        const effectiveMediaType = mediaType ?? (file.type.includes("pdf") ? "document" : isArtwork ? "artwork" : "general");
-        const effectiveIsArtwork = isArtwork || effectiveMediaType === "artwork";
         formData.append("mediaType", effectiveMediaType);
         formData.append("isArtwork", String(effectiveIsArtwork));
 
