@@ -202,12 +202,14 @@ SavazAI WebApps Platform
 - Digital monograph creator with cover design, curatorial essays, and multi-artwork curation.
 - Drag-and-drop artwork ordering and display curation.
 - Virtual flip-book preview and batch placard printing for featured collection items.
+- **Deep Catalog Duplication**: Single-click clone action (`/api/admin/catalogs/[id]/duplicate`) duplicating the complete catalog metadata, sequential plates (`ECatalogItem`), curatorial annotations, and custom magazine pages (`ECatalogCustomPage`) with draft status and unique slug generation.
 
 #### 5. Events & Concerts Studio (`/admin/events`)
 - Exhibition, recital, and workshop management with multi-day daily schedules (`dailySchedules`) and structured RSVP configuration (`EventRsvpConfig`).
 - Full administrative control over date selection requirement, multi-date attendance checkboxes, time-slot requirement (*Mandatory / Optional / Disabled*), slot duration intervals (15m, 30m, 45m, 60m, 120m), and slot capacities.
 - Dynamic "Hero Earmark / Subtitle Badge" editor configuring public hero labels.
 - Real-time RSVP attendee tracker with attendance date badges, arrival time slot tracking, and CSV roster export.
+- **Deep Event Duplication**: Single-click copy action (`/api/admin/events/[id]/duplicate`) creating an unlisted/draft clone with title suffix `(Copy)`, slug collision handling, preserved venue metadata, media, and artwork associations, and reset RSVP counts. Automatically focuses the edit modal for seamless curation.
 
 #### 6. Dynamic Mail Message Studio & Audit Telemetry (`/admin/settings` -> Mail Msg Config)
 - **Decoupled Alert Routing**: Inbound submissions route to `systemSetting.adminAlertEmail`, never to administrative superadmin credentials.
@@ -273,6 +275,11 @@ SavazAI WebApps Platform
 - **Radix-Safe Client-Side WebP Image Optimizer (`src/lib/client-image-optimizer.ts`)**: Interactive pre-upload modal for large non-artwork images (`> 1 MB` or `> 2000px`) offering instant client-side HTML5 Canvas WebP conversion with size comparison, `"Converting & Uploading..."` active spinner feedback, Radix `<Dialog>` pointer-event isolation, and immediate auto-dismissal on completion, while strictly preserving untouched master files for Artwork uploads.
 - **Privacy-First Visitor Telemetry Hub & Excel Export (`/api/telemetry/visit`, `/api/admin/analytics`, `/api/admin/analytics/export`)**: Tracks anonymous visitor sessions, device types (Desktop, Mobile, Tablet), OS, browsers, approximate geolocation (Country, Region, City), visited routes, and dwell time. Displays 4 compact summary KPI tiles on the Admin Overview Dashboard (`/admin`) linking directly to the full **Visitor Telemetry** hub (`/admin/settings?tab=telemetry`) with 1-click `.xlsx` spreadsheet export via `exceljs`.
 - **Video & Embed Aspect Ratio & Parameter Studio**: Supports portrait/vertical social video formats (`9:16` Shorts/Reels/TikTok, `4:5` Portrait, `1:1` Square, `16:9`, `4:3`, `auto`), horizontal alignment (`left`, `center`, `right`), letterbox stage backdrops (`transparent`, `blurred`, `solid`), and a Visual Parameter Inspector (`Autoplay`, `Loop`, `Mute`, `Controls`, `Modest Branding`, `Show Captions`).
+
+#### 16. Deep Duplication Engine & Centralized Museum Placard Management
+- **Deep Event Duplication Engine (`POST /api/admin/events/[id]/duplicate`)**: Duplicates full event data with automatic suffixing `"{Title} (Copy)"`, sequential collision-safe slug generation, deep replication of linked artworks (`ArtworkOnEvent`), and fresh draft status (`isPublished: false`) with 0 registrations.
+- **Deep e-Catalog Duplication Engine (`POST /api/admin/catalogs/[id]/duplicate`)**: Deep clones full digital catalogs including plate sequence (`ECatalogItem`), custom curatorial annotations, per-plate layout configurations, and editorial magazine pages (`ECatalogCustomPage`) with draft status until curated and published.
+- **Decommissioned Public "Print QR" Download Action (`/artwork/[slug]`)**: Cleanly decommissioned the public download button from the exhibition placard QR box while retaining the inline QR code and curatorial provenance notice, centralizing physical placard printing strictly within the administrative Placards Studio.
 
 ---
 

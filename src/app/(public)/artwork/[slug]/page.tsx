@@ -20,7 +20,6 @@ import {
   ShieldCheck,
   Calendar,
   QrCode,
-  Download,
 } from "lucide-react";
 
 interface PageProps {
@@ -310,33 +309,21 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             )}
 
             {/* Exhibition Floor QR Code Card */}
-            <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 flex items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3">
-                <img
-                  src={qrDataUrl}
-                  alt={`QR Code for ${artwork.title}`}
-                  className="w-16 h-16 rounded-md border border-border bg-white p-1 shrink-0 shadow-xs"
-                />
-                <div className="space-y-0.5">
-                  <span className="font-serif font-bold text-xs text-foreground flex items-center gap-1.5">
-                    <QrCode className="w-3.5 h-3.5 text-primary" />
-                    Exhibition Placard QR
-                  </span>
-                  <p className="text-[10px] text-muted-foreground leading-tight max-w-[200px]">
-                    Scan in physical gallery or exhibition floor for curatorial provenance.
-                  </p>
-                </div>
+            <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 flex items-center gap-3 shadow-xs">
+              <img
+                src={qrDataUrl}
+                alt={`QR Code for ${artwork.title}`}
+                className="w-16 h-16 rounded-md border border-border bg-white p-1 shrink-0 shadow-xs"
+              />
+              <div className="space-y-0.5">
+                <span className="font-serif font-bold text-xs text-foreground flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5 text-primary" />
+                  Exhibition Placard QR
+                </span>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  Scan in physical gallery or exhibition floor for curatorial provenance.
+                </p>
               </div>
-              <a
-                href={qrDataUrl}
-                download={`placard-qr-${artwork.slug}.png`}
-                title="Download High-Res Printable QR Code"
-              >
-                <Button variant="outline" size="sm" className="h-8 text-xs gap-1 cursor-pointer">
-                  <Download className="w-3.5 h-3.5" />
-                  Print QR
-                </Button>
-              </a>
             </div>
 
             {/* Action Button: Acquisition Inquiries */}

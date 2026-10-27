@@ -18,6 +18,7 @@ import {
   Eye,
   EyeOff,
   Home,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,9 @@ export default function AdminCatalogsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [targetCatalog, setTargetCatalog] = React.useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+
+  // Duplicate State
+  const [duplicatingCatalogId, setDuplicatingCatalogId] = React.useState<string | null>(null);
 
   // New Catalog Form State
   const [newTitle, setNewTitle] = React.useState("");
@@ -194,6 +198,26 @@ export default function AdminCatalogsPage() {
       toast.error(err instanceof Error ? err.message : "Error deleting catalog");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDuplicateCatalog = async (cat: ECatalogListItem) => {
+    try {
+      setDuplicatingCatalogId(cat.id);
+      const res = await fetch(`/api/admin/catalogs/${cat.id}/duplicate`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to duplicate catalog");
+        return;
+      }
+      toast.success(`Catalog duplicated: "${data.title}"`);
+      await fetchCatalogs();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error duplicating catalog");
+    } finally {
+      setDuplicatingCatalogId(null);
     }
   };
 
@@ -410,6 +434,21 @@ export default function AdminCatalogsPage() {
                   </div>
 
                   <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDuplicateCatalog(cat)}
+                      disabled={duplicatingCatalogId === cat.id}
+                      className="h-7 px-2 text-xs text-foreground hover:text-primary cursor-pointer"
+                      title="Duplicate Catalog"
+                    >
+                      {duplicatingCatalogId === cat.id ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-primary" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
+                      )}
+                      Duplicate
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"

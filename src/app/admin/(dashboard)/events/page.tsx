@@ -23,6 +23,7 @@ import {
   EyeOff,
   Home,
   Printer,
+  Copy,
 } from "lucide-react";
 import { ArtworkPlacardSheet, type PlacardArtwork } from "@/components/admin/artwork-placard-sheet";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,9 @@ export default function EventsAdminPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [targetDeleteEvent, setTargetDeleteEvent] = React.useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+
+  // Duplicate Event State
+  const [duplicatingEventId, setDuplicatingEventId] = React.useState<string | null>(null);
 
   // Exhibition Floor QR Modal State
   const [exhibitionQrModalOpen, setExhibitionQrModalOpen] = React.useState(false);
@@ -290,6 +294,30 @@ export default function EventsAdminPage() {
       toast.error("Error deleting event");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // Duplicate Event Handler
+  const handleDuplicateEvent = async (ev: EventItem) => {
+    try {
+      setDuplicatingEventId(ev.id);
+      const res = await fetch(`/api/admin/events/${ev.id}/duplicate`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to duplicate event");
+        return;
+      }
+      toast.success(`Event duplicated: "${data.title}"`);
+      await reloadEvents();
+      if (data && data.id) {
+        handleOpenEdit(data);
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error duplicating event");
+    } finally {
+      setDuplicatingEventId(null);
     }
   };
 
@@ -769,6 +797,21 @@ export default function EventsAdminPage() {
                     >
                       <Users className="w-3.5 h-3.5" />
                       RSVPs ({ev._count?.registrations || 0})
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDuplicateEvent(ev)}
+                      disabled={duplicatingEventId === ev.id}
+                      className="h-7 w-7 p-0"
+                      title="Duplicate Event"
+                    >
+                      {duplicatingEventId === ev.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                      )}
                     </Button>
 
                     <Button
